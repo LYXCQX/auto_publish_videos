@@ -48,7 +48,7 @@ class HomepageScanRecord(Base):
     next_scan_time = Column(DateTime)
 
 
-engine = create_engine('mysql+pymysql://root:root%40123@localhost:3306/video_tools')
+engine = create_engine('mysql+pymysql://root:root%leyuan521@34.81.86.216:3306/video_tools')
 Session = sessionmaker(bind=engine)
 
 
