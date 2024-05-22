@@ -1,3 +1,7 @@
+import os,sys
+print(sys.path)
+sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../')
+print(sys.path)
 import configparser
 import time
 from datetime import datetime, date, timedelta
@@ -13,7 +17,7 @@ from util.robot_util import send_feishu_msg
 from util.string_util import split_and_get_last_id, calculate_md5
 
 config = configparser.ConfigParser()
-config.read('download_config.ini')
+config.read('download_config.ini', encoding='utf-8')
 
 save_path = config['save_path']['save_path']
 homepage_urls = config['homepage_urls']['urls'].strip().split('\n')

@@ -112,7 +112,7 @@ def huazhonghua(images, alpha_factor=0.05):
     return result
 
 
-def huazhonghua_by_config(images, alpha_factor=0.05, hzh_video='/Users/zhonghao/PycharmProjects/video_ai/output/source/background.mp4'):
+def huazhonghua_by_config(images, alpha_factor=0.05, hzh_video=''):
     video_capture = opencv_read_video_from_path(hzh_video)
     hzh_frames = read_frames(video_capture)
     hzh_size = len(hzh_frames)
@@ -249,13 +249,18 @@ def 每隔x帧随机选择一帧加随机模糊区域(images, gap, gauss_kernel,
     steps = math.ceil(image_size / gap)
     result = []
     print('开始处理{}帧模糊处理'.format(str(steps)))
+    iq=1
     for i in range(0, steps):
         start = i * gap
-        end = (i + 1) * gap
+        end = (i + 1) * gap-1
         if end > image_size:
             end = image_size - 1
         change_frame = random.randint(start, end)
         for j in range(start, end + 1):
+            # if j >= image_size:
+            #     return result
+            print(iq,j,image_size)
+            iq=iq+1
             if j != change_frame:
                 result.append(images[j])
             else:
@@ -285,19 +290,25 @@ def random_gaussian_blur(frame, area_size=500, kernel_size=5):
     # frame = img.copy()
     # 获取图片尺寸
     height, width = frame.shape[:2]
+    # 提取顶部区域
+    top_y = 0
+    top_roi = frame[top_y:top_y + area_size, 0:width]
 
-    # 确保随机区域不会超出图片边界
-    x = random.randint(0, width - area_size)
-    y = random.randint(0, height - area_size)
+    # 应用高斯模糊到顶部区域
+    blurred_top_roi = cv2.GaussianBlur(top_roi, (kernel_size, kernel_size), 0)
 
-    # 提取要模糊的区域
-    roi = frame[y:y + area_size, x:x + area_size]
+    # 将模糊后的顶部区域放回原图
+    frame[top_y:top_y + area_size, 0:width] = blurred_top_roi
 
-    # 应用高斯模糊
-    blurred_roi = cv2.GaussianBlur(roi, (kernel_size, kernel_size), 0)
+    # 提取底部区域
+    bottom_y = height - area_size
+    bottom_roi = frame[bottom_y:bottom_y + area_size, 0:width]
 
-    # 将模糊后的区域放回原图
-    frame[y:y + area_size, x:x + area_size] = blurred_roi
+    # 应用高斯模糊到底部区域
+    blurred_bottom_roi = cv2.GaussianBlur(bottom_roi, (kernel_size, kernel_size), 0)
+
+    # 将模糊后的底部区域放回原图
+    frame[bottom_y:bottom_y + area_size, 0:width] = blurred_bottom_roi
 
     return frame
 

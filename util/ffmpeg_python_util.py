@@ -129,7 +129,8 @@ def add_pip_to_video(background_video, pip_video, output_video, opacity=1.0):
     ffmpeg.output(output, output_video, shortest=None).run()
 
 
-def add_watermark(input_stream, watermark_content, watermark_type='text', direction='right-top-to-bottom', duration=5):
+def add_watermark(input_stream, font_path, watermark_content, watermark_type='text', direction='right-top-to-bottom',
+                  duration=5):
     if direction == 'right-top-to-bottom':
         x_expr = "W-w"
         y_expr = "mod(t*H/{},H)".format(duration)
@@ -146,7 +147,7 @@ def add_watermark(input_stream, watermark_content, watermark_type='text', direct
     if watermark_type == 'text':
         input_stream = input_stream.filter('drawtext', text=watermark_content, x=x_expr, y=y_expr, fontsize=26,
                                            fontcolor='yellow', borderw=1, bordercolor='red',
-                                           fontfile='/Users/zhonghao/data/github_fonts/Android-ttf-download/字体/隶书.ttf')
+                                           fontfile=font_path)
     elif watermark_type == 'image':
         watermark_stream = ffmpeg.input(watermark_content)
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x_expr, y=y_expr)
@@ -178,7 +179,7 @@ def add_blurred_background(input_stream, width, height, top_percent=5, bottom_pe
     return output
 
 
-def add_title(input_stream, title, line_num=10, title_position='top', title_gap=5):
+def add_title(input_stream, config, title, line_num=10, title_position='top', title_gap=5):
     if title:
         title_x = 'w/2-text_w/2'
         if title_position == 'top':
@@ -187,7 +188,7 @@ def add_title(input_stream, title, line_num=10, title_position='top', title_gap=
             title_y = f'h-h*{title_gap}/100-text_h'
         input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=38, fontcolor='yellow',
                                              shadowcolor='black', shadowx=4, shadowy=4,
-                                             fontfile='/Users/zhonghao/data/github_fonts/Android-ttf-download/字体/隶书.ttf',
+                                             fontfile=config.font_path,
                                              borderw=1, bordercolor='red')
 
         # if title_position == 'top':
@@ -277,7 +278,7 @@ def generate_srt(transcription, srt_path, max_chars_per_line=25):
         paragrah = paragrah + "<s>" + text + "</s>"
     paragrah = paragrah + "</p></speak>"
     # with open("/Users/zhonghao/PycharmProjects/video_ai/output/audio/result/large_transcription_specified_lang.srt",
-    with open(srt_path, "w") as file:
+    with open(srt_path, "w", encoding='utf-8') as file:
         file.write(srt_content)
     return srt_content, sentences, paragrah
 
@@ -298,6 +299,6 @@ def add_subtitles(video_stream, subtitle_path, font_path, font_size, font_color_
     # output = video_stream.filter('subtitles', filename=subtitle_path,
     #                              force_style=f'FontName={font_path},FontSize={font_size},PrimaryColour=&H00{font_color_code},OutlineColour=&H00{border_color_code},BorderStyle=1,BorderW={borderw},BackColour=&H00000000')
 
-    output = video_stream.filter('subtitles', filename=subtitle_path,
+    output = video_stream.filter('subtitles', filename=subtitle_path, charenc='UTF-8',
                                  force_style=f'FontName={font_path},FontSize={font_size},PrimaryColour=&H00{font_color_code}')
     return output

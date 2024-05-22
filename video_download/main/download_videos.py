@@ -4,12 +4,12 @@ import configparser
 
 from common.constant import VideoStatus
 from model.model import get_session, DownloadVideoInfo
-from util.file_util import download_video
+from util.file_util import download_video, calculate_video_md5
 from util.reverse_url_download import single_download_url
 from util.string_util import split_and_get_last_id
 
 config = configparser.ConfigParser()
-config.read('download_config.ini')
+config.read('download_config.ini', encoding='utf-8')
 
 download_urls = config['download_urls']['urls'].strip().split('\n')
 video_tags = config['video_tags']['tags']
@@ -26,7 +26,7 @@ def process_url_video_downloads():
         if video_id not in existing_video_ids:
             # 逆向市面上付费下载软件的api接口 or github搜索douyin的XBogus相关算法自己部署服务，逆向付费软件自用即可，开源有风险，所以这里大家可以自行发挥。
             # response = requests.get(f'http://localhost:8081/video_download_info?url={url}')
-            media = single_download_url(url)
+            media = single_download_url(video_id)
             if media and media['resource_url']:
                 resource_url = media['resource_url']
                 # download_url = response.json().get('download_url')
@@ -44,6 +44,7 @@ def process_url_video_downloads():
                     download_url=resource_url,
                     video_tags=video_tags,
                     local_path=str(local_path),
+                    video_md5=calculate_video_md5(local_path),
                     target_pub_account=target_account,
                     video_status=VideoStatus.PENDING  # 假设去重状态初始为'pending'
                 )

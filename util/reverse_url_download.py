@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 import requests
 
@@ -6,7 +7,7 @@ from util.file_util import create_missing_dirs
 import re
 
 hhm_api = 'https://h.xxx.cn/posts'
-single_hhm_api = 'https://h.xxx.cn/single_post'
+single_hhm_api = 'http://34.81.86.216:1864/api/douyin/web/fetch_one_video?aweme_id=%s'
 uid = 'asdz2123zdsfa2rf12'
 secret_key = '5aaa27e8ffc459f2b315ba9cf6a97c2ba'
 base_video_url = '/Users/zhonghao/video/video_ai/'
@@ -23,24 +24,19 @@ title_sensitive_word_mapping = {
 tag_sensitive_word = ['抖音', '巨量引擎', '巨量算数', 'Dou+', 'Dou', '抖', '巨量']
 
 
-def single_download_url(video_url):
-    params = {
-        'userId': uid,
-        'secretKey': secret_key,
-        'url': video_url
-    }
-    r = requests.post(single_hhm_api, json=params, verify=False)
+def single_download_url(video_id):
+    r = requests.get(single_hhm_api % video_id)
     response_data = r.json()
     print('response_data -> ', response_data)
     # title = response_data['text']
-    if 'medias' in response_data.get('data', {}):
-        data = response_data['data']
-        title = data['text']
-        medias = data['medias']
-        media = medias[0]
-        media['title'] = title
-        if media and media['media_type'] == 'video':
-            return media
+    if 'aweme_detail' in response_data.get('data', {}):
+        aweme_detail = response_data['data']['aweme_detail']
+        title_extra = json.loads(aweme_detail['anchor_info']['extra'])
+        title = title_extra[0]['title']
+        medias = aweme_detail['video']['play_addr']['url_list']
+        media = {'resource_url': medias[0], 'title': title}
+        # if media and media['media_type'] == 'video':
+        return media
     return {}
 
 

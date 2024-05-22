@@ -1,6 +1,7 @@
 import hashlib
 import os
 import tempfile
+import time
 from pathlib import Path
 
 import requests
@@ -38,6 +39,16 @@ def get_mp4_files(folder_path):
     return mp4_files
 
 
+def get_mp4_files_path(folder_path):
+    mp4_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".mp4"):
+                path = os.path.join(root, file)
+                mp4_files.append(path)
+    return mp4_files
+
+
 def get_temp_path(suffix):
     temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
     temp_file_path = temp_file.name
@@ -71,3 +82,24 @@ def create_missing_dirs(folder_path):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
         print(f"文件夹 {folder_path} 创建成功")
+def delete_file(file_path):
+    try:
+        os.remove(file_path)
+        print(f"File {file_path} has been deleted.")
+    except PermissionError:
+        print(f"File {file_path} is in use. Attempting to close the file handle.")
+        close_file_handle(file_path)
+        time.sleep(1)  # 延迟一秒再尝试删除文件
+        os.remove(file_path)
+        print(f"File {file_path} has been deleted after closing the file handle.")
+def close_file_handle(file_path):
+    # 获取所有正在运行的进程
+    for proc in psutil.process_iter(['pid', 'name']):
+        try:
+            # 获取进程的打开文件列表
+            for handle in proc.open_files():
+                if handle.path == file_path:
+                    proc.kill()  # 终止占用文件的进程
+                    print(f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
+        except (psutil.NoSuchProcess, psutil.AccessDenied):
+            continue

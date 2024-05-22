@@ -1,25 +1,23 @@
-import os
+import functools
 import shutil
 import time
+import uuid
 from concurrent.futures import ThreadPoolExecutor
 
+from util.audio_util import *
 from util.ffmpeg_python_util import *
 from util.file_util import *
+from util.model_util import whisper_model
 from util.opencv_video_util import *
 from util.video_pingyu_util import process_frame
 from video_dedup.config_parser import Config
-from util.audio_util import *
-from util.model_util import whisper_model
-import functools
+from video_merge.main import merge_video
 
 
-def process_dedup_by_config(input_video, final_video_path, config: Config):
+def process_dedup_by_config(config: Config):
     time0 = time.time()
-    # input_video = '/Users/zhonghao/PycharmProjects/video_ai/demo/shop_demo.mp4'
-    # angle = 1  # 要翻转的角度
-    # remove_silented_video = '/Users/zhonghao/PycharmProjects/video_ai/output/ffmpeg_python/transform_pipeline_remove_tmp.mp4'
-    # output_video = '/Users/zhonghao/PycharmProjects/video_ai/output/ffmpeg_python/transform_pipeline_1.mp4'
-    # ffmpeg_final_video = '/Users/zhonghao/PycharmProjects/video_ai/output/ffmpeg_python/transform_pipeline_2.mp4'
+    # 按照配置合并视频
+    input_video = merge_video(config)
 
     width, height, origin_duration, bit_rate = video_properties(input_video)
 
@@ -46,10 +44,11 @@ def process_dedup_by_config(input_video, final_video_path, config: Config):
 
     # 6. 添加文字 or 图片 or 视频水印
     if config.watermark_text != '':
-        video_stream = add_watermark(video_stream, config.watermark_text, watermark_type=config.watermark_type,
+        video_stream = add_watermark(video_stream, config.font_path, config.watermark_text,
+                                     watermark_type=config.watermark_type,
                                      direction=config.watermark_direction, duration=video_duration)
 
-    bgm_path = '/Users/zhonghao/PycharmProjects/video_ai/demo/bgm_silient.m4a'
+    # bgm_path = '/Users/zhonghao/PycharmProjects/video_ai/demo/bgm_silient.m4a'
     merged_audio = audio_stream
     if config.bgm_audio_path != '':
         print('config.bgm_audio_path -> ', config.bgm_audio_path)
@@ -72,7 +71,7 @@ def process_dedup_by_config(input_video, final_video_path, config: Config):
         srt_path_tmp = get_temp_path('.srt')
         generate_srt(srt_result, srt_path_tmp)
         # 依据srt文件，在视频中加字幕
-        font_path = '/Users/zhonghao/data/github_fonts/Android-ttf-download/字体/隶书.ttf'
+        font_path = config.font_path
         # todo 要对字体font颜色进行一下校验，防止拼写错误等问题
         video_stream = add_subtitles(video_stream, srt_path_tmp, font_path, 10, config.srt_font_color)
 
@@ -93,11 +92,11 @@ def process_dedup_by_config(input_video, final_video_path, config: Config):
 
     # 10. 添加title 和 description
     if config.top_title_text != '':
-        video_stream = add_title(video_stream, title='日常百货好物分享',
+        video_stream = add_title(video_stream, config, title='日常百货好物分享',
                                  title_gap=config.top_title_gap, title_position='top')
 
     if config.bottom_title_text != '':
-        video_stream = add_title(video_stream, title='点击头像橱窗同款哦',
+        video_stream = add_title(video_stream, config, title='点击头像橱窗同款哦',
                                  title_gap=config.bottom_title_gap, title_position='bottom')
 
     # 11. 视频淡入淡出
@@ -117,7 +116,8 @@ def process_dedup_by_config(input_video, final_video_path, config: Config):
     video_capture = opencv_read_video_from_path(ffmpeg_tmp)
     frames = read_frames(video_capture)
     if config.gauss_step > 0:
-        frames = 每隔x帧随机选择一帧加随机模糊区域(frames, config.gauss_step, config.gauss_kernel, config.gauss_area_size)
+        frames = 每隔x帧随机选择一帧加随机模糊区域(frames, config.gauss_step, config.gauss_kernel,
+                                                   config.gauss_area_size)
 
     if config.switch_frame_step > 0:
         frames = switch_frames_with_step(frames, step=config.switch_frame_step)
@@ -140,7 +140,8 @@ def process_dedup_by_config(input_video, final_video_path, config: Config):
     # ffmpeg读取静音视频，用于后续和音频进行合并
     silent_audio, silent_video = get_video_audio(opencv_tmp)
     # 合并音频和视频
-    save_stream_to_video(silent_video, merged_audio, final_video_path, bit_rate)
+    save_stream_to_video(silent_video, merged_audio, config.save_path + '/' + time.time() + uuid.uuid4() + ".mp4",
+                         bit_rate)
 
     time1 = time.time()
     print('视频去重耗时: {}, 视频时长：{}'.format(time1 - time0, origin_duration))

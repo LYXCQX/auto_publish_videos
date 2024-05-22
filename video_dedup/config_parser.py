@@ -16,6 +16,7 @@ class Config:
         self.contrast = 1.0
         self.crop_size = 0
         self.watermark_text = ''
+        self.font_path = ''
         self.watermark_type = 'text'
         self.watermark_direction = 'right-top-to-bottom'
         self.bgm_audio_path: str = ''
@@ -48,12 +49,16 @@ class Config:
         self.target_pub_user_id = ''
         self.external_dedup_video_path = ''
         self.data = ''
+        self.max_sec = 10
+        self.fps = 30
+        self.need_split_path = ''
+        self.video_temp = ''
 
 
 def read_dedup_config():
     config = Config()
     parser = configparser.ConfigParser()
-    parser.read('dedup_config.ini')
+    parser.read('dedup_config.ini', encoding='utf-8')
 
     config.add_hzh = parser.getboolean('dedup_step', 'add_hzh')
     config.hzh_factor = parser.getfloat('dedup_step', 'hzh_factor')
@@ -62,6 +67,7 @@ def read_dedup_config():
     config.save_path = parser.get('save_path', 'save_path')
     config.video_path = parser.get('video_path', 'video_path')
     config.external_dedup_video_path = parser.get('video_path', 'external_dedup_video_path')
+    config.need_split_path = parser.get('video_path', 'video_temp')
     config.remove_finish = parser.getboolean('finish_step', 'remove_finish')
     config.target_pub_user_id = parser.get('finish_step', 'target_pub_user_id')
     config.write_db = parser.getboolean('finish_step', 'write_db')
@@ -77,6 +83,7 @@ def read_dedup_config():
     config.contrast = parser.getfloat('dedup_step', 'contrast')
     config.crop_size = parser.getint('dedup_step', 'crop_size')
     config.watermark_text = parser.get('dedup_step', 'watermark_text')
+    config.font_path = parser.get('dedup_step', 'font_path')
     config.watermark_type = parser.get('dedup_step', 'watermark_type')
     config.watermark_direction = parser.get('dedup_step', 'watermark_direction')
     config.bgm_audio_path = parser.get('dedup_step', 'bgm_audio_path')
@@ -100,6 +107,8 @@ def read_dedup_config():
     config.enable_scrambling = parser.getint('dedup_step', 'enable_scrambling')
     config.enable_texture_syn = parser.getboolean('dedup_step', 'enable_texture_syn')
     config.enable_edge_blur = parser.getboolean('dedup_step', 'enable_edge_blur')
-    config.data = parser.get('json_map', 'data')
-
+    config.data = parser.get('dedup_step', 'data')
+    config.max_sec = parser.get('dedup_step', 'max_sec')
+    config.fps = parser.get('dedup_step', 'fps')
+    config.need_split_path = parser.get('video_split', 'need_split_path')
     return config
