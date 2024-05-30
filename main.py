@@ -42,7 +42,3 @@ if __name__ == '__main__':
                                                     microsecond=0)
     scheduler.add_job(scheduled_job, 'interval', minutes=30, start_date=initial_execution_time)  # 每30分钟执行一次
     scheduler.start()
-    # loguru.logger.info('start ',datetime.now())
-    # for i in range(100):
-    # scheduled_job()
-    # loguru.logger.info('end ',datetime.now())

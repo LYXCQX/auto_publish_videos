@@ -1,9 +1,11 @@
 # -*- coding: utf-8 -*-
+import json
 import pathlib
 import random
 from datetime import datetime
 
 import loguru
+from apscheduler.schedulers.blocking import BlockingScheduler
 from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
@@ -172,13 +174,20 @@ class KuaiShouVideo(object):
                     user_infos = db.fetchall(f"select * from user_info where user_id = {good['user_id']}")
                     # if user_infos['cookies'] == '':
                     user_info = user_infos[0]
-                    account_file = get_account_file(user_info['user_id'])
-                    asyncio.run(kuaishou_setup(account_file, handle=True))
-                    await self.upload(playwright, good, user_info, account_file, '')
+                    if datetime.now().hour in json.loads(user_info['publish_hours']):
+                        account_file = get_account_file(user_info['user_id'])
+                        asyncio.run(kuaishou_setup(account_file, handle=True))
+                        await self.upload(playwright, good, user_info, account_file, '')
                 except Exception as e:
                     loguru.logger.info(e)
 
 
 if __name__ == '__main__':
     app = KuaiShouVideo()
-    asyncio.run(app.main(), debug=False)
+    # asyncio.run(app.main(), debug=False)
+    scheduler = BlockingScheduler()
+    now = datetime.now()
+    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
+    # 使用 cron 规则指定每天23点执行一次
+    scheduler.add_job(app.main(), 'cron', hour=23, minute=0)
+    scheduler.start()

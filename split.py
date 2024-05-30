@@ -14,9 +14,9 @@ def split_job():
 
 
 if __name__ == '__main__':
-    # scheduler = BlockingScheduler()
-    # now = datetime.now()
-    # initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
-    # scheduler.add_job(split_job, 'interval', minutes=30, start_date=initial_execution_time)  # 每30分钟执行一次
-    # scheduler.start()
-    split_job()
+    scheduler = BlockingScheduler()
+    now = datetime.now()
+    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
+    scheduler.add_job(split_job, 'interval', minutes=30, start_date=initial_execution_time)  # 每30分钟执行一次
+    scheduler.start()
+    # split_job()
