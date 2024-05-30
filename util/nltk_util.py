@@ -1,3 +1,4 @@
+import loguru
 import nltk
 from nltk.tokenize import sent_tokenize
 
@@ -28,5 +29,5 @@ sentences = sent_tokenize(article)
 
 # 打印断句结果
 for i, sentence in enumerate(sentences, 1):
-    print(f"Sentence {i}: {sentence.strip()}\n\n")
-    print('\n')
+    loguru.logger.info(f"Sentence {i}: {sentence.strip()}\n\n")
+    loguru.logger.info('\n')

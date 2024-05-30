@@ -1,6 +1,8 @@
 import math
 import os
 
+import loguru
+
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '1'
 
@@ -18,7 +20,7 @@ class TransNetV2:
             if not os.path.isdir(model_dir):
                 raise FileNotFoundError(f"[TransNetV2] ERROR: {model_dir} is not a directory.")
             else:
-                print(f"[TransNetV2] Using weights from {model_dir}.")
+                loguru.logger.info(f"[TransNetV2] Using weights from {model_dir}.")
 
         self._input_size = (27, 48, 3)
         try:
@@ -68,11 +70,11 @@ class TransNetV2:
             predictions.append((single_frame_pred.numpy()[0, 25:75, 0],
                                 all_frames_pred.numpy()[0, 25:75, 0]))
 
-            print("\r[TransNetV2] Processing video frames {}/{}".format(
+            loguru.logger.info("\r[TransNetV2] Processing video frames {}/{}".format(
                 min(len(predictions) * 50, len(frames)), len(frames)
             ), end="")
 
-        print("\n")
+        loguru.logger.info("\n")
 
         single_frame_pred = np.concatenate([single_ for single_, all_ in predictions])
         all_frames_pred = np.concatenate([all_ for single_, all_ in predictions])
@@ -87,7 +89,7 @@ class TransNetV2:
                                       "individual frames from video file. Install `ffmpeg` command line tool and then "
                                       "install python wrapper by `pip install ffmpeg-python`.")
 
-        print("[TransNetV2] Extracting frames from {}".format(video_fn))
+        loguru.logger.info("[TransNetV2] Extracting frames from {}".format(video_fn))
         video_stream, err = ffmpeg.input(video_fn).output(
             "pipe:", format="rawvideo", pix_fmt="rgb24", s="48x27"
         ).run(capture_stdout=True, capture_stderr=True)
@@ -96,7 +98,7 @@ class TransNetV2:
         return (video, *self.predict_frames(video))
 
     def predict_video_2(self, video_fn: str):
-        print("[TransNetV2] Extracting frames from {}".format(video_fn))
+        loguru.logger.info("[TransNetV2] Extracting frames from {}".format(video_fn))
         clip = VideoFileClip(video_fn, target_resolution=(27, 48))
         duration = math.floor(clip.duration * 10) / 10
         fps = clip.fps  # 视频的帧率
@@ -106,6 +108,7 @@ class TransNetV2:
             if len(frame) != 0:  # 如果帧的长度不为零
                 frames.append(frame)  # 将帧添加到 frames 列表中
         video = np.array(frames)
+        clip.close()  # 确保关闭clip
         return video, *self.predict_frames(video)
 
     @staticmethod
@@ -186,7 +189,7 @@ def main():
     model = TransNetV2(args.weights)
     for file in args.files:
         if os.path.exists(file + ".predictions.txt") or os.path.exists(file + ".scenes.txt"):
-            print(f"[TransNetV2] {file}.predictions.txt or {file}.scenes.txt already exists. "
+            loguru.logger.info(f"[TransNetV2] {file}.predictions.txt or {file}.scenes.txt already exists. "
                   f"Skipping video {file}.", file=sys.stderr)
             continue
 
@@ -201,7 +204,7 @@ def main():
 
         if args.visualize:
             if os.path.exists(file + ".vis.png"):
-                print(f"[TransNetV2] {file}.vis.png already exists. "
+                loguru.logger.info(f"[TransNetV2] {file}.vis.png already exists. "
                       f"Skipping visualization of video {file}.", file=sys.stderr)
                 continue
 

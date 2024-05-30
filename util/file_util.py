@@ -4,15 +4,18 @@ import tempfile
 import time
 from pathlib import Path
 
+import loguru
+import psutil
 import requests
 
 from common.conf import BASE_DIR
 
 
 def download_video(url, output_filename):
+    loguru.logger.info(f'视频下载链接：{url}')
     try:
         # 发送HTTP GET请求来获取视频数据
-        response = requests.get(url, stream=True)
+        response = requests.get(url, stream=True, timeout=(10, 300))
         response.raise_for_status()  # 检查是否有错误发生
         # tmp_file = base_video_url + 'tmp.mp4'
         # 打开一个本地文件用于保存视频数据
@@ -24,9 +27,9 @@ def download_video(url, output_filename):
         # 使用ffmpeg将视频文件转换为所需格式（可选）
         # ffmpeg.input(tmp_file).output(output_filename).run(overwrite_output=True)
 
-        print(f"视频已成功下载到 {output_filename}")
+        loguru.logger.info(f"视频已成功下载到 {output_filename}")
     except Exception as e:
-        print(f"下载视频时发生错误: {e}")
+        loguru.logger.error(f"下载视频时发生错误: {e}")
 
 
 def get_mp4_files(folder_path):
@@ -37,6 +40,38 @@ def get_mp4_files(folder_path):
                 path = os.path.join(root, file)
                 mp4_files.append({"path": path, "file_name": file})
     return mp4_files
+
+def get_json_files(folder_path):
+    mp4_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".json"):
+                path = os.path.join(root, file)
+                mp4_files.append({"path": path, "file_name": file})
+    return mp4_files
+
+def get_img_files(folder_path):
+    audio_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if (file.endswith(".jpg") or file.endswith(".jpeg")
+                    or file.endswith(".png") or file.endswith(".gif")
+                    or file.endswith(".raw") or file.endswith(".webp")
+                    or file.endswith(".tiff") or file.endswith(".svg")
+                    or file.endswith(".bmp")):
+                audio_files.append(os.path.join(root, file))
+    return audio_files
+
+
+def get_audio_files(folder_path):
+    audio_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if (file.endswith(".mp3") or file.endswith(".wav")
+                    or file.endswith(".flac") or file.endswith(".aac")
+                    or file.endswith(".ogg")):
+                audio_files.append(os.path.join(root, file))
+    return audio_files
 
 
 def get_mp4_files_path(folder_path):
@@ -81,17 +116,22 @@ def get_account_file(user_id):
 def create_missing_dirs(folder_path):
     if not os.path.exists(folder_path):
         os.makedirs(folder_path)
-        print(f"文件夹 {folder_path} 创建成功")
+        loguru.logger.info(f"文件夹 {folder_path} 创建成功")
+
+
 def delete_file(file_path):
-    try:
-        os.remove(file_path)
-        print(f"File {file_path} has been deleted.")
-    except PermissionError:
-        print(f"File {file_path} is in use. Attempting to close the file handle.")
-        close_file_handle(file_path)
-        time.sleep(1)  # 延迟一秒再尝试删除文件
-        os.remove(file_path)
-        print(f"File {file_path} has been deleted after closing the file handle.")
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+            loguru.logger.info(f"File {file_path} has been deleted.")
+        except PermissionError:
+            loguru.logger.info(f"File {file_path} is in use. Attempting to close the file handle.")
+            close_file_handle(file_path)
+            time.sleep(1)  # 延迟一秒再尝试删除文件
+            os.remove(file_path)
+            loguru.logger.info(f"File {file_path} has been deleted after closing the file handle.")
+
+
 def close_file_handle(file_path):
     # 获取所有正在运行的进程
     for proc in psutil.process_iter(['pid', 'name']):
@@ -100,6 +140,6 @@ def close_file_handle(file_path):
             for handle in proc.open_files():
                 if handle.path == file_path:
                     proc.kill()  # 终止占用文件的进程
-                    print(f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
+                    loguru.logger.info(f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue

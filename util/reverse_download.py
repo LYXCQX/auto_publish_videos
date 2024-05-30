@@ -1,6 +1,8 @@
 import json
 import re
 
+import loguru
+
 from model.model import get_session, HomepageScanRecord, ShipinhaoUserInfo
 from util.base_util import ggffww_decode, ggffww_encode
 from util.file_util import create_missing_dirs
@@ -43,7 +45,7 @@ def free_download_by_cookie(url, cookie, homepage_url_md5):
         'inputvalue': encoded_url
     }
     response_data = requester.post(post_url, data=body, headers=headers)
-    print('resp -> ', response_data)
+    loguru.logger.info('resp -> ', response_data)
     resp_code = response_data['code']
     if resp_code == -110:
         msg = response_data['msg']
@@ -56,7 +58,7 @@ def free_download_by_cookie(url, cookie, homepage_url_md5):
     user_id = 'default'
     if encoded_data:
         data = json.loads(ggffww_decode(encoded_data))
-        print(f'resp data -> {data}')
+        loguru.logger.info(f'resp data -> {data}')
         posts = data['posts']
         if posts:
             username = user_id

@@ -2,6 +2,8 @@ import base64
 import re
 import random
 
+import loguru
+
 
 def ggffww_decode(a):
     a = a[16:]
@@ -64,17 +66,17 @@ if __name__ == "__main__":
     origin = 'https://www.douyin.com/user/MS4wLjABAAAA_9xUitRvw8M3tbGbO5RaNpzlnNbj2EepMmOuRtRiFgrgKxI9zMY0s5_ILNhbJzBc'
     d = ggffww_decode(
         "MC4zMzU2NTE3NTc5kVWmRTdSRGVGNEVBNnS5AVcy0SNzF0YQFDZWp3VQdzXTVTeDd3QwY1aBRXYFRmbrZjbzFzS3IjUYBFVxIlViFTQBFUQCFkaMdHNT10LyV2c19SbvNmLulWe19GZuc3d39yL6MHc0RHa=")
-    print(d)
+    loguru.logger.info(d)
     # encoded_url = ggffww_encode(origin)
-    # print('编码后的字符串：', encoded_url)
+    # loguru.logger.info('编码后的字符串：', encoded_url)
     #
     # decoded_url = ggffww_decode(encoded_url)
-    # print('解码后的字符串：', decoded_url)
-    # print('字符串对比：', encoded_url == decoded_url)
+    # loguru.logger.info('解码后的字符串：', decoded_url)
+    # loguru.logger.info('字符串对比：', encoded_url == decoded_url)
     #
     # if validate_url(origin):
     #     encoded_url = encode_url(origin)
-    #     print("gpt编码后的URL:", encoded_url)
-    #     print('gpt解码后：', ggffww_decode(encoded_url))
+    #     loguru.logger.info("gpt编码后的URL:", encoded_url)
+    #     loguru.logger.info('gpt解码后：', ggffww_decode(encoded_url))
     # else:
-    #     print("URL格式错误")
+    #     loguru.logger.info("URL格式错误")

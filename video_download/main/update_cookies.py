@@ -1,5 +1,7 @@
 from ctypes import Array
 
+import loguru
+
 from model.model import ShipinhaoUserInfo, get_session
 from util.cookie_util import check_and_update_cookie
 
@@ -16,6 +18,6 @@ def update_cookie():
 if __name__ == '__main__':
     handle = False
     if not handle:
-        print('as java true')
+        loguru.logger.info('as java true')
     else:
-        print('as java false')
+        loguru.logger.info('as java false')

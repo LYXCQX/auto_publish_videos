@@ -1,10 +1,13 @@
-import tempfile
+import math
+import os
+import random
 
 import ffmpeg
-import math
+import loguru
 from pydub import AudioSegment
 from pydub.silence import detect_silence
-import os
+
+from video_dedup.config_parser import Config
 
 
 def video_properties(input_path):
@@ -14,7 +17,7 @@ def video_properties(input_path):
     height = int(video_info['height'])
     duration = float(video_info['duration'])
     avg_bitrate = int(video_info['bit_rate'])
-    print('width {}, height {}, duration {}'.format(width, height, duration))
+    loguru.logger.info('width {}, height {}, duration {}'.format(width, height, duration))
     return width, height, duration, avg_bitrate
 
 
@@ -25,8 +28,10 @@ def get_video_audio(input_path):
 
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
+    loguru.logger.info('---', video_stream, '---', audio_stream, '---', output_path)
     stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
                            crf=18, **{'b:v': str(target_bitrate) + 'k'}).global_args('-tag:v', 'hvc1')
+    loguru.logger.info(stream)
     ffmpeg.run(stream)
 
 
@@ -48,9 +53,9 @@ def images_to_video(image_paths, temp_dir, output_file, bit_rate):
     input_pattern = os.path.join(temp_dir, 'frame_%05d.png')
     (
         ffmpeg.input(input_pattern, framerate=30)
-            .output(output_file, y='-y', vcodec='libx265', preset='medium', crf=18,
-                    **{'b:v': str(bit_rate) + 'k'}).global_args('-tag:v', 'hvc1')
-            .run()
+        .output(output_file, y='-y', vcodec='libx265', preset='medium', crf=18,
+                **{'b:v': str(bit_rate) + 'k'}).global_args('-tag:v', 'hvc1')
+        .run()
     )
 
 
@@ -129,7 +134,8 @@ def add_pip_to_video(background_video, pip_video, output_video, opacity=1.0):
     ffmpeg.output(output, output_video, shortest=None).run()
 
 
-def add_watermark(input_stream, font_path, watermark_content, watermark_type='text', direction='right-top-to-bottom',
+def add_watermark(input_stream, config: Config, watermark_content, watermark_type='text',
+                  direction='right-top-to-bottom',
                   duration=5):
     if direction == 'right-top-to-bottom':
         x_expr = "W-w"
@@ -147,49 +153,69 @@ def add_watermark(input_stream, font_path, watermark_content, watermark_type='te
     if watermark_type == 'text':
         input_stream = input_stream.filter('drawtext', text=watermark_content, x=x_expr, y=y_expr, fontsize=26,
                                            fontcolor='yellow', borderw=1, bordercolor='red',
-                                           fontfile=font_path)
+                                           fontfile=config.font_path)
     elif watermark_type == 'image':
-        watermark_stream = ffmpeg.input(watermark_content)
-        input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x_expr, y=y_expr)
+        input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, 10, 220)
+        input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, 10, 650)
+
     elif watermark_type == 'video':
-        watermark_stream = ffmpeg.input(watermark_content)
+        watermark_stream = ffmpeg.input(random.choice(config.watermark_video_path))
         watermark_stream = watermark_stream.filter_('trim', duration=10)
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x_expr, y=y_expr)
 
     return input_stream
 
 
-def add_blurred_background(input_stream, width, height, top_percent=5, bottom_percent=5, y_percent=5, target_width=720,
+# 添加图片水印
+def add_img_sy(watermark_image_path, input_stream, x, y):
+    if watermark_image_path.endswith('gif'):
+        watermark_stream = ffmpeg.input(watermark_image_path, stream_loop=-1)
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='250', h='250')
+        input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1)
+    else:
+        watermark_stream = ffmpeg.input(watermark_image_path, loop=1)
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='250', h='250')
+        input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1, enable='mod(t,1)')
+    return input_stream
+
+
+def add_blurred_background(input_stream, output_video_tmp, width, height, top_percent=5, bottom_percent=5, y_percent=5,
+                           target_width=720,
                            target_height=1280):
     scale_width = f"iw*(100-{y_percent}*2)/100"
     scale_height = f"ih*(100-{top_percent}-{bottom_percent})/100"
 
-    # scaled_video = input_stream.filter('scale', scale_width, scale_height)
+    scaled_video = input_stream.filter('scale', scale_width, scale_height)
 
-    blurred_background = input_stream.filter('scale', 'iw/2', 'ih/2').filter('boxblur', 10).filter('scale',
-                                                                                                   target_width,
-                                                                                                   target_height)
-    # pos_x = round(width * y_percent / 100)
-    # pos_y = round(height * top_percent / 100)
-    pos_x = (target_width - width) // 2
-    pos_y = (target_height - height) // 2
+    blurred_background = (ffmpeg.input(output_video_tmp)
+                          .filter(random.choice(['reverse', 'vflip']))
+                          .filter('scale', 'iw/2', 'ih/2')
+                          .filter('boxblur', random.choice([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))
+                          .filter('scale', target_width, target_height))
+    pos_x = round(width * y_percent / 100)
+    pos_y = round(height * top_percent / 100)
+    # pos_x = (target_width - width) // 2
+    # pos_y = (target_height - height) // 2
 
-    # output = ffmpeg.overlay(blurred_background, scaled_video, x=pos_x, y=pos_y)
-    output = ffmpeg.overlay(blurred_background, input_stream, x=pos_x, y=pos_y)
+    output = ffmpeg.overlay(blurred_background, scaled_video, x=pos_x, y=pos_y)
+    # output = ffmpeg.overlay(blurred_background, input_stream, x=pos_x, y=pos_y)
     return output
 
 
 def add_title(input_stream, config, title, line_num=10, title_position='top', title_gap=5):
     if title:
+        fontsize = config.top_title_size
         title_x = 'w/2-text_w/2'
         if title_position == 'top':
             title_y = f'h*{title_gap}/100'
+            input_stream = draw_text(config, fontsize, input_stream, title, title_x, title_y, 'orange')
         else:
             title_y = f'h-h*{title_gap}/100-text_h'
-        input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=38, fontcolor='yellow',
-                                             shadowcolor='black', shadowx=4, shadowy=4,
-                                             fontfile=config.font_path,
-                                             borderw=1, bordercolor='red')
+            fontsize = config.bottom_title_size
+            for txt in title.split('\n'):
+                input_stream = draw_text(config, fontsize, input_stream, txt, title_x, title_y, 'white')
+                title_y += '+80'
+                loguru.logger.info(title_y)
 
         # if title_position == 'top':
         #     title_y = f'h*{title_gap}/100+text_h+10'
@@ -203,25 +229,32 @@ def add_title(input_stream, config, title, line_num=10, title_position='top', ti
     return input_stream
 
 
+def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontcolor):
+    input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
+                                         shadowcolor='black', shadowx=4, shadowy=4,
+                                         fontfile=config.font_path,
+                                         borderw=1, bordercolor='black')
+    return input_stream
+
+
 def remove_silent_video(input_path, origin_duration, silence_thresh, min_silence_len, cut_ratio):
+    # 初始化 FFmpeg 输入
+    input_video = ffmpeg.input(input_path)
+    if cut_ratio == 0:
+        return input_video.video, origin_duration
+
     audio = AudioSegment.from_file(input_path)
     # min_silence_len = 500  # 最小静默长度
     # silence_thresh = -20  # 静默阈值（dB）
     silence_ranges = detect_silence(audio, min_silence_len, silence_thresh)
     silence_ranges_in_seconds = [(start / 1000, end / 1000) for start, end in silence_ranges]
-
-    # 初始化 FFmpeg 输入
-    input_video = ffmpeg.input(input_path)
-    if cut_ratio == 0:
-        return input_video.audio, input_video.video, origin_duration
-
     # 分割视频和音频
     video_clips = []
     audio_clips = []
     last_t = 0
     final_duration = 0.0  # 用于计算最终视频时长
     for start, end in silence_ranges_in_seconds:
-        print('silent size :', end - start)
+        loguru.logger.info('silent size :', end - start)
         delete_duration = (end - start) * cut_ratio / 2  # 得到头尾删除时长
         new_start = start + delete_duration
         new_end = end - delete_duration
@@ -242,7 +275,7 @@ def remove_silent_video(input_path, origin_duration, silence_thresh, min_silence
     audio_clips.append(a_final_clip)
 
     final_duration += origin_duration - last_t
-    print(f"Final Duration: {final_duration} seconds")
+    loguru.logger.info(f"Final Duration: {final_duration} seconds")
 
     # 拼接视频和音频
     joined_video = ffmpeg.concat(*video_clips, v=1, a=0)
@@ -293,12 +326,35 @@ color_mapping = {
 }
 
 
-def add_subtitles(video_stream, subtitle_path, font_path, font_size, font_color_name):
-    font_color_code = color_mapping.get(font_color_name.lower(), 'FFFFFF')  # 默认白色
+def random_color():
+    # 生成随机的RGB颜色代码
+    r = random.randint(0, 255)
+    g = random.randint(0, 255)
+    b = random.randint(0, 255)
+
+    # 将RGB颜色代码转换为ASS格式的颜色代码
+    color_code = "&H{:02X}{:02X}{:02X}&".format(r, g, b)
+
+    return color_code
+
+
+def add_subtitles(video_stream, subtitle_path, config: Config):
+    font_color_code = color_mapping.get(config.srt_font_color.lower(), 'FFFFFF')  # 默认白色
 
     # output = video_stream.filter('subtitles', filename=subtitle_path,
-    #                              force_style=f'FontName={font_path},FontSize={font_size},PrimaryColour=&H00{font_color_code},OutlineColour=&H00{border_color_code},BorderStyle=1,BorderW={borderw},BackColour=&H00000000')
+    #                              force_style=f'FontName={config.font_path},FontSize={config.font_size},PrimaryColour=&H00{font_color_code},OutlineColour=&H00{config.border_color_code},BorderStyle=1,BorderW=5,BackColour=&H00000000')
 
     output = video_stream.filter('subtitles', filename=subtitle_path, charenc='UTF-8',
-                                 force_style=f'FontName={font_path},FontSize={font_size},PrimaryColour=&H00{font_color_code}')
+                                 force_style=f'FontName={config.font_path},'
+                                             f'FontSize={config.font_size},'
+                                             f'PrimaryColour={random_color()},'
+                                             f'BorderStyle={config.BorderStyle},'
+                                             f'OutlineColour={config.border_color_code},'
+                                             f'Outline={random.choice([0, 1, 2, 3])},'
+                                             f'Bold=1,Alignment=2,'
+                                             f'MarginV={config.MarginV},'
+                                             f'Underline={int(config.underline)},'
+                                             f'Shadow={random.choice([1, 2, 3])},'
+                                             f'BackColour={random_color()}'
+                                 )
     return output

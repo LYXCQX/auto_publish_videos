@@ -2,6 +2,8 @@
 import json
 from datetime import datetime
 
+import loguru
+
 from common.constant import VideoStatus
 from model.model import DownloadVideoInfo, get_session
 from util.file_util import get_mp4_files, calculate_video_md5
@@ -20,7 +22,7 @@ def sync_info_from_path():
         path = video_path['path']
         md5 = calculate_video_md5(path)
         video_name = video_path['file_name']
-        print('开始处理: {}'.format(video_name))
+        loguru.logger.info('开始处理: {}'.format(video_name))
         title = video_name.rsplit('.mp4', 1)[0]
         video_info = DownloadVideoInfo(
             video_id=md5,
@@ -41,6 +43,6 @@ def sync_info_from_path():
 
 
 if __name__ == '__main__':
-    print('d -> ', config.data)
+    loguru.logger.info('d -> ', config.data)
     d = json.loads(config.data)
-    print('data -> ', d['a'])
+    loguru.logger.info('data -> ', d['a'])

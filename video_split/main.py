@@ -1,65 +1,70 @@
 import os
 
+import loguru
 from moviepy.editor import VideoFileClip
 
 from video_split.transnetv2 import TransNetV2
-from util.file_util import get_mp4_files_path
+from util.file_util import get_mp4_files_path, delete_file
 
 
-def split_video(folder_path):
+def split_video(folder_path, source_path):
     video_files = get_mp4_files_path(folder_path)
     for video_path in video_files:
-        try:
-            video_name = os.path.basename(video_path)
-            video_name_without_ext = os.path.splitext(video_name)[0]
-            video_folder = os.path.dirname(video_path)
-            output_folder = os.path.join(video_folder, video_name_without_ext)
-            if not os.path.exists(output_folder):
-                os.makedirs(output_folder)
+        split_video_one(video_path, folder_path, source_path)
 
-            model = TransNetV2()
-            video_frames, single_frame_predictions, all_frame_predictions = model.predict_video_2(video_path)
-            scenes = model.predictions_to_scenes(single_frame_predictions)
 
-            video_clip = VideoFileClip(video_path)
+def split_video_one(video_path, folder_path, source_path):
+    try:
+        video_name = os.path.basename(video_path)
+        video_name_without_ext = os.path.splitext(video_name)[0]
+        video_folder = os.path.dirname(video_path)
+        output_folder = os.path.join(source_path,video_folder.replace(folder_path,''))
+        if not os.path.exists(output_folder):
+            os.makedirs(output_folder)
+
+        model = TransNetV2()
+        video_frames, single_frame_predictions, all_frame_predictions = model.predict_video_2(video_path)
+        scenes = model.predictions_to_scenes(single_frame_predictions)
+
+        with VideoFileClip(video_path) as video_clip:
+            video_clip = video_clip.without_audio()
             for i, (start, end) in enumerate(scenes):
                 start_time = start / video_clip.fps
                 end_time = end / video_clip.fps
                 segment_clip = video_clip.subclip(start_time, end_time)
                 output_path = os.path.join(output_folder, f'{video_name_without_ext}_{i + 1}.mp4')
-                segment_clip.write_videofile(output_path, codec='libx264', fps=video_clip.fps)
-            video_clip.close()
-        except Exception as e:
-            print(f"Error processing {video_path}: {e}")
-        finally:
-            if os.path.exists(video_path):
                 try:
-                    os.remove(video_path)
-                except PermissionError as e:
-                    print(f"Could not delete {video_path}: {e}")
+                    segment_clip.write_videofile(output_path, codec='libx264', fps=video_clip.fps)
+                finally:
+                    segment_clip.close()
+        video_clip.close()
+    except Exception as e:
+        loguru.logger.info(f"Error processing {video_path}: {e}")
+    finally:
+        if os.path.exists(video_path):
+            try:
+                os.remove(video_path)
+            except PermissionError as e:
+                loguru.logger.info(f"Could not delete {video_path}: {e}")
 
 
-def remove_audio(video_path, target):
+def remove_audio(video_path):
     video_files = get_mp4_files_path(video_path)
     for video_file in video_files:
         file_name = os.path.basename(video_file)
         video = ''
         video_without_audio = ''
-        print(file_name)
+        loguru.logger.info(file_name)
         try:
             video = VideoFileClip(video_file)
             video_without_audio = video.without_audio()
-            video_without_audio.write_videofile(target + file_name, codec='libx264', remove_temp=True)
+            video_without_audio.write_videofile(video_path + 'temp_' + file_name, codec='libx264', remove_temp=True)
         except Exception as e:
-            print(f"Error processing {file_name}: {e}")
+            loguru.logger.info(f"Error processing {file_name}: {e}")
         finally:
             video.close()
             video_without_audio.close()
-            if os.path.exists(video_file):
-                try:
-                    os.remove(video_file)
-                except PermissionError as e:
-                    print(f"Could not delete {video_file}: {e}")
+            delete_file(video_file)
 
 
 if __name__ == '__main__':

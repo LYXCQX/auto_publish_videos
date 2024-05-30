@@ -1,7 +1,7 @@
 import os,sys
-print(sys.path)
+loguru.logger.info(sys.path)
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../../')
-print(sys.path)
+loguru.logger.info(sys.path)
 import configparser
 import time
 from datetime import datetime, date, timedelta
@@ -28,7 +28,7 @@ init = config.getboolean('homepage_urls', 'init')
 
 def process_homepage_download():
     random_int = random.randint(1, 90)
-    print(f'-------------- start scheduler time with delay {random_int}, at {datetime.now()}---------------')
+    loguru.logger.info(f'-------------- start scheduler time with delay {random_int}, at {datetime.now()}---------------')
     # 随机休眠x秒，避免触发查询太过规律
     ck_idx = random.randint(1, 2)
     cookie_name = 'cookie' + str(ck_idx)
@@ -42,18 +42,18 @@ def process_homepage_download():
         target_account = target_accounts[i]
         homepage_url = homepage_urls[i]
         homepage_url_md5 = calculate_md5(homepage_url)
-        print(f'{homepage_url}的md5值-> {homepage_url_md5}')
+        loguru.logger.info(f'{homepage_url}的md5值-> {homepage_url_md5}')
         # 查找homepage_url的上一次更新视频时间，判断是否继续爬取
         scan_result = session.query(HomepageScanRecord).filter_by(homepage_url_md5=homepage_url_md5).all()[0]
         latest_update_time = scan_result.latest_update_time
         next_scan_time = scan_result.next_scan_time
         if datetime.now() < next_scan_time:
-            print(f'当前时间{datetime.now()}早于下次爬取时间{next_scan_time},继续休息一下吧。')
+            loguru.logger.info(f'当前时间{datetime.now()}早于下次爬取时间{next_scan_time},继续休息一下吧。')
             continue
         if latest_update_time:
             update_gap = (datetime.now() - latest_update_time).seconds
             if update_gap < scan_result.gap_minutes * 60:
-                print(
+                loguru.logger.info(
                     f'{homepage_url}暂停爬取，原因：上一次获取到用户更新时间为{latest_update_time}，间隔小于设置的{scan_result.gap_minutes}分钟，暂停爬取')
                 continue
 
@@ -64,22 +64,22 @@ def process_homepage_download():
         if current > latest_pub_time:
             diff = (current - latest_pub_time).seconds
             if diff < 1800:
-                print(f'账号{target_account}上一次发布视频时间是{latest_pub_time}，时间在半小时以内，先休息一下不再爬取。')
+                loguru.logger.info(f'账号{target_account}上一次发布视频时间是{latest_pub_time}，时间在半小时以内，先休息一下不再爬取。')
                 continue
         if user_info:
             target_account_id = user_info.shipinhao_user_id
         else:
             target_account_id = 'unknown'
-            print(f'未找到{target_account}对应的用户信息，设置account_id为unknown，请检查配置文件download_config.ini')
+            loguru.logger.info(f'未找到{target_account}对应的用户信息，设置account_id为unknown，请检查配置文件download_config.ini')
         current_videos = free_download_by_cookie(homepage_url, cookie, homepage_url_md5)
         empty_cnt = scan_result.empty_cnt
-        print('response video : ', current_videos)
+        loguru.logger.info('response video : ', current_videos)
         if len(current_videos) == 0:
             if empty_cnt > 3:
                 send_feishu_msg(homepage_url + ' 视频解析为空, cookie ' + str(ck_idx))
                 next_time = datetime.now() + timedelta(minutes=30)
                 # 视频返回为空，先休息半小时
-                print(f'{homepage_url}页面返回数据为空，我们先休息半小时后再来爬取')
+                loguru.logger.info(f'{homepage_url}页面返回数据为空，我们先休息半小时后再来爬取')
                 session.query(HomepageScanRecord).filter_by(homepage_url_md5=homepage_url_md5).update(
                     {HomepageScanRecord.next_scan_time: next_time})
             else:
@@ -124,7 +124,7 @@ def process_homepage_download():
                      HomepageScanRecord.next_scan_time: datetime.now() + timedelta(minutes=4)})
     session.add_all(download_video_infos)
     session.commit()
-    print(f'-------------- end scheduler time {datetime.now()} ---------------\n\n')
+    loguru.logger.info(f'-------------- end scheduler time {datetime.now()} ---------------\n\n')
 
 
 if __name__ == '__main__':

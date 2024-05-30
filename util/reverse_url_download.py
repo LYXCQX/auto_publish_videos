@@ -1,5 +1,7 @@
 import json
 from datetime import datetime
+
+import loguru
 import requests
 
 from util.string_util import split_and_get_last_id
@@ -27,7 +29,7 @@ tag_sensitive_word = ['抖音', '巨量引擎', '巨量算数', 'Dou+', 'Dou', '
 def single_download_url(video_id):
     r = requests.get(single_hhm_api % video_id)
     response_data = r.json()
-    print('response_data -> ', response_data)
+    loguru.logger.info('response_data -> ', response_data)
     # title = response_data['text']
     if 'aweme_detail' in response_data.get('data', {}):
         aweme_detail = response_data['data']['aweme_detail']
@@ -50,7 +52,7 @@ def fetch_homepage_videos(homepage_url):
     }
     r = requests.post(hhm_api, json=params, verify=False)
     response_data = r.json()
-    print('response: ', response_data, datetime.now())
+    loguru.logger.info('response: ', response_data, datetime.now())
     if 'posts' in response_data.get('data', {}):
         data = response_data['data']
         posts = data['posts']
@@ -103,4 +105,4 @@ def fetch_homepage_videos(homepage_url):
 
 if __name__ == '__main__':
     resp = fetch_homepage_videos('https://www.douyin.com/user/MS4wLjABAAAAFDufLNnG1giiaYBM2xsmWFHq1piPqW-0wH691m0eZ2w')
-    print(resp)
+    loguru.logger.info(resp)

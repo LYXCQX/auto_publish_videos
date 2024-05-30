@@ -1,4 +1,6 @@
 import time
+
+import loguru
 import pyautogui
 import os
 
@@ -92,12 +94,12 @@ for i in range(1, 30):
     try:
         subtitle_status = pyautogui.locateCenterOnScreen(subtitle_ongoing_path, confidence=0.8)
         if subtitle_status:
-            print('字幕识别进行中，继续等待')
+            loguru.logger.info('字幕识别进行中，继续等待')
             time.sleep(2)
         else:
             break
     except pyautogui.ImageNotFoundException:
-        print('字幕识别完毕，捕获异常')
+        loguru.logger.info('字幕识别完毕，捕获异常')
         break
 
 
@@ -110,7 +112,7 @@ time.sleep(1)
 # 定位到 '视频导出按钮'，鼠标移动到这里，然后下滑，找到字幕导出按钮
 video_output_btn_path = '/Users/zhonghao/my_project/python_rpa/剪映_视频导出按钮.jpg'
 video_output_btn = pyautogui.locateCenterOnScreen(video_output_btn_path, confidence=0.8)
-print(f'video_output_btn -> {video_output_btn}')
+loguru.logger.info(f'video_output_btn -> {video_output_btn}')
 pyautogui.moveTo(video_output_btn[0], video_output_btn[1])
 time.sleep(1)
 

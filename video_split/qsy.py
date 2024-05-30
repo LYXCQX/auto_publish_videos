@@ -1,6 +1,7 @@
 import os
 import sys
 import cv2
+import loguru
 import numpy
 from moviepy import editor
 
@@ -55,7 +56,7 @@ class WatermarkRemover():
     '''
         # 区域无效，程序退出
         if len(roi) != 4:
-            print('NULL ROI!')
+            loguru.logger.info('NULL ROI!')
             sys.exit()
 
         # 复制单帧灰度图像ROI内像素点

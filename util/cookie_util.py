@@ -2,6 +2,8 @@ import asyncio
 import json
 import os
 from pathlib import Path
+
+import loguru
 from playwright.async_api import async_playwright
 
 from common.conf import BASE_DIR, FEISHU_ROBOT_URL
@@ -17,7 +19,7 @@ async def save_storage_state(account_file: str):
         context = await browser.new_context()
         page = await context.new_page()
         await page.goto("https://channels.weixin.qq.com")
-        print("请在浏览器中扫码登录...")
+        loguru.logger.info("请在浏览器中扫码登录...")
         await asyncio.sleep(60)  # 给用户60秒时间进行扫码登录
 
         # 保存存储状态到文件
@@ -38,11 +40,11 @@ async def save_storage_state(account_file: str):
 #         if not handle:
 #             # Todo alert message
 #             return False
-#         print('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
+#         loguru.logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
 #         requester = HttpRequester()
 #         post_response = requester.post(FEISHU_ROBOT_URL, json={"user": shipinhao_username},
 #                                        headers={"Content-Type": "application/json"})
-#         print('robot alert response: ', post_response)
+#         loguru.logger.info('robot alert response: ', post_response)
 #         os.system('python3 -m playwright install')
 #         os.system(f'playwright codegen channels.weixin.qq.com --save-storage={account_file}')  # 生成cookie文件
 #         # await get_and_save_cookies(connection=connection, shipinhao_user_id=shipinhao_user_id)
@@ -59,12 +61,12 @@ async def check_and_update_cookie(shipinhao_userinfo: ShipinhaoUserInfo, handle=
         if not handle:
             # Todo alert message
             return False
-        print('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
+        loguru.logger.info('[+] cookie文件不存在或已失效，即将自动打开浏览器，请扫码登录，登陆后会自动生成cookie文件')
         # requester = HttpRequester()
         # post_response = requester.post(FEISHU_ROBOT_URL, json={"user": shipinhao_userinfo.shipinhao_username},
         #                                headers={"Content-Type": "application/json"})
         post_response = send_feishu_msg(shipinhao_userinfo.shipinhao_username)
-        print('robot alert response: ', post_response)
+        loguru.logger.info('robot alert response: ', post_response)
         os.system('python3 -m playwright install')
         os.system(f'playwright codegen channels.weixin.qq.com --save-storage={account_file}')  # 生成cookie文件
         await save_cookies_from_file_to_database(shipinhao_userinfo.shipinhao_user_id)
@@ -98,10 +100,10 @@ async def db_cookie_auth(cookie_data, shipinhao_user_id=''):
         await page.goto("https://channels.weixin.qq.com/platform/post/create")
         try:
             await page.wait_for_selector('div.title-name:has-text("视频号小店")', timeout=10000)  # 等待5秒
-            print(f"{shipinhao_user_id} [+] 等待5秒 cookie 失效")
+            loguru.logger.info(f"{shipinhao_user_id} [+] 等待5秒 cookie 失效")
             return False
         except:
-            print(f"{shipinhao_user_id} [+] cookie 有效")
+            loguru.logger.info(f"{shipinhao_user_id} [+] cookie 有效")
             return True
 
 

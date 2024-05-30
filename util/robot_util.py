@@ -1,5 +1,7 @@
 import random
 
+import loguru
+
 from util.request_util import HttpRequester
 
 
@@ -8,6 +10,6 @@ def send_feishu_msg(msg):
     requester = HttpRequester()
     post_response = requester.post(robot_url, json={"user": msg},
                                    headers={"Content-Type": "application/json"})
-    print('robot alert response: ', post_response)
+    loguru.logger.info('robot alert response: ', post_response)
     return post_response
 

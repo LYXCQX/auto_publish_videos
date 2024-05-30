@@ -2,6 +2,8 @@ import random
 
 import cv2
 import os
+
+import loguru
 import numpy as np
 import math
 # from 测试2 import *
@@ -169,7 +171,7 @@ def resize_img(image, width, height):
 
 
 def frames_to_video(frames, output_file):
-    print('使用{}帧数据来生成视频'.format(str(len(frames))))
+    loguru.logger.info('使用{}帧数据来生成视频'.format(str(len(frames))))
     video_codec = cv2.VideoWriter_fourcc(*'X264')
     shape = frames[0].shape
     size = (shape[1], shape[0])
@@ -221,7 +223,7 @@ def 检测边缘进行膨胀(image, low_threshold, high_threshold, dilation_size
         selected_contours = random.sample(filtered_contours, 8)
     else:
         selected_contours = filtered_contours
-    print('边缘膨胀： 第' + str(idx) + '帧，筛选出轮廓' + str(len(selected_contours)) + '个')
+    loguru.logger.info('边缘膨胀： 第' + str(idx) + '帧，筛选出轮廓' + str(len(selected_contours)) + '个')
     # 创建一个空白图像来画选中的轮廓
     contour_img = np.zeros_like(edges)
 
@@ -248,8 +250,7 @@ def 每隔x帧随机选择一帧加随机模糊区域(images, gap, gauss_kernel,
     # 57 / 20 = 3
     steps = math.ceil(image_size / gap)
     result = []
-    print('开始处理{}帧模糊处理'.format(str(steps)))
-    iq=1
+    loguru.logger.info('开始处理{}帧模糊处理'.format(str(steps)))
     for i in range(0, steps):
         start = i * gap
         end = (i + 1) * gap-1
@@ -257,14 +258,10 @@ def 每隔x帧随机选择一帧加随机模糊区域(images, gap, gauss_kernel,
             end = image_size - 1
         change_frame = random.randint(start, end)
         for j in range(start, end + 1):
-            # if j >= image_size:
-            #     return result
-            print(iq,j,image_size)
-            iq=iq+1
             if j != change_frame:
                 result.append(images[j])
             else:
-                print('模糊处理的帧', j)
+                loguru.logger.info('模糊处理的帧', j)
                 blured_img = random_gaussian_blur(images[j], area_size=gauss_area_size, kernel_size=gauss_kernel)
                 result.append(blured_img)
     return result
@@ -282,7 +279,7 @@ def 随机模糊处理(image, num_regions, region_size, blur_degree, j):
         roi_size = roi_size + 1
         blurred_image[y:y + region_size[0], x:x + region_size[1]] = blurred_roi
 
-    print('处理高斯模糊{}'.format(j))
+    loguru.logger.info('处理高斯模糊{}'.format(j))
     return blurred_image
 
 
@@ -290,25 +287,19 @@ def random_gaussian_blur(frame, area_size=500, kernel_size=5):
     # frame = img.copy()
     # 获取图片尺寸
     height, width = frame.shape[:2]
-    # 提取顶部区域
-    top_y = 0
-    top_roi = frame[top_y:top_y + area_size, 0:width]
 
-    # 应用高斯模糊到顶部区域
-    blurred_top_roi = cv2.GaussianBlur(top_roi, (kernel_size, kernel_size), 0)
+    # 确保随机区域不会超出图片边界
+    x = random.randint(0, width - area_size)
+    y = random.randint(0, height - area_size)
 
-    # 将模糊后的顶部区域放回原图
-    frame[top_y:top_y + area_size, 0:width] = blurred_top_roi
+    # 提取要模糊的区域
+    roi = frame[y:y + area_size, x:x + area_size]
 
-    # 提取底部区域
-    bottom_y = height - area_size
-    bottom_roi = frame[bottom_y:bottom_y + area_size, 0:width]
+    # 应用高斯模糊
+    blurred_roi = cv2.GaussianBlur(roi, (kernel_size, kernel_size), 0)
 
-    # 应用高斯模糊到底部区域
-    blurred_bottom_roi = cv2.GaussianBlur(bottom_roi, (kernel_size, kernel_size), 0)
-
-    # 将模糊后的底部区域放回原图
-    frame[bottom_y:bottom_y + area_size, 0:width] = blurred_bottom_roi
+    # 将模糊后的区域放回原图
+    frame[y:y + area_size, x:x + area_size] = blurred_roi
 
     return frame
 

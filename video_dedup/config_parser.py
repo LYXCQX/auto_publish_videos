@@ -1,4 +1,7 @@
 import configparser
+import random
+
+from util.file_util import get_audio_files, get_img_files
 
 
 class Config:
@@ -19,7 +22,10 @@ class Config:
         self.font_path = ''
         self.watermark_type = 'text'
         self.watermark_direction = 'right-top-to-bottom'
-        self.bgm_audio_path: str = ''
+        self.watermark_image_path = ''
+        self.dz_watermark_image_path = ''
+        self.watermark_video_path = ''
+        self.bgm_audio_path: list = []
         self.srt_duration = 99999
         self.srt_font_color = 'yellow'
         self.blur_background = False
@@ -53,6 +59,19 @@ class Config:
         self.fps = 30
         self.need_split_path = ''
         self.video_temp = ''
+        self.role = ''
+        self.rate = ''
+        self.volume = ''
+        self.font_size = ''
+        self.border_color_code = ''
+        self.BorderStyle = ''
+        self.MarginV = ''
+        self.Outline = ''
+        self.top_title_size = ''
+        self.bottom_title_size = ''
+        self.underline = ''
+        self.BackColour = ''
+        self.Shadow = ''
 
 
 def read_dedup_config():
@@ -67,7 +86,7 @@ def read_dedup_config():
     config.save_path = parser.get('save_path', 'save_path')
     config.video_path = parser.get('video_path', 'video_path')
     config.external_dedup_video_path = parser.get('video_path', 'external_dedup_video_path')
-    config.need_split_path = parser.get('video_path', 'video_temp')
+    config.video_temp = parser.get('video_path', 'video_temp')
     config.remove_finish = parser.getboolean('finish_step', 'remove_finish')
     config.target_pub_user_id = parser.get('finish_step', 'target_pub_user_id')
     config.write_db = parser.getboolean('finish_step', 'write_db')
@@ -86,9 +105,12 @@ def read_dedup_config():
     config.font_path = parser.get('dedup_step', 'font_path')
     config.watermark_type = parser.get('dedup_step', 'watermark_type')
     config.watermark_direction = parser.get('dedup_step', 'watermark_direction')
-    config.bgm_audio_path = parser.get('dedup_step', 'bgm_audio_path')
+    config.watermark_image_path = get_img_files(parser.get('dedup_step', 'watermark_image_path'))
+    config.dz_watermark_image_path = get_img_files(parser.get('dedup_step', 'dz_watermark_image_path'))
+    config.watermark_video_path = get_img_files(parser.get('dedup_step', 'watermark_video_path'))
+    config.bgm_audio_path = get_audio_files(parser.get('dedup_step', 'bgm_audio_path'))
     config.srt_duration = parser.getfloat('dedup_step', 'srt_duration')
-    config.srt_font_color = parser.get('dedup_step', 'srt_font_color')
+    config.srt_font_color = random.choice(eval(parser.get('dedup_step', 'srt_font_color')))
     config.blur_background = parser.getboolean('dedup_step', 'blur_background')
     config.blur_top_percent = parser.getfloat('dedup_step', 'blur_top_percent')
     config.blur_bottom_percent = parser.getfloat('dedup_step', 'blur_bottom_percent')
@@ -110,5 +132,20 @@ def read_dedup_config():
     config.data = parser.get('dedup_step', 'data')
     config.max_sec = parser.get('dedup_step', 'max_sec')
     config.fps = parser.get('dedup_step', 'fps')
+    config.role = parser.get('dedup_step', 'role')
+    config.rate = parser.get('dedup_step', 'rate')
+    config.volume = parser.get('dedup_step', 'volume')
+    config.font_size = parser.get('dedup_step', 'font_size')
+    config.border_color_code = parser.get('dedup_step', 'border_color_code')
+    config.BorderStyle = parser.get('dedup_step', 'BorderStyle')
+    config.top_title_size = parser.get('dedup_step', 'top_title_size')
+    config.bottom_title_size = parser.get('dedup_step', 'bottom_title_size')
+    config.underline = parser.get('dedup_step', 'underline')
+    config.MarginV = parser.get('dedup_step', 'MarginV')
+    config.Outline = parser.get('dedup_step', 'Outline')
+    config.BackColour = random.choice(eval(parser.get('dedup_step', 'BackColour')))
+    config.Shadow = parser.get('dedup_step', 'Shadow')
+
     config.need_split_path = parser.get('video_split', 'need_split_path')
+
     return config

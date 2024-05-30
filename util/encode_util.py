@@ -1,6 +1,8 @@
 import base64
 import random
 
+import loguru
+
 
 def ggffww_encode(a):
     a = base64.b64encode(a.encode()).decode()
@@ -14,4 +16,4 @@ def ggffww_encode(a):
 
 # 示例用法
 encoded_string = ggffww_encode("https://www.douyin.com/user/MS4wLjABAAAA5DTjH0fZcTBPdOsG6CkoeC4YtAT8uA92N-NvqHUjdAo")
-print(encoded_string)
+loguru.logger.info(encoded_string)

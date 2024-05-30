@@ -1,5 +1,6 @@
 import base64
 
+import loguru
 import requests
 import random
 
@@ -88,8 +89,8 @@ if __name__ == "__main__":
     # }
     post_response = requester.post(post_url, data=body, headers=headers)
     data = post_response.get('data')
-    print("POST Response:", data)
-    print("POST Response:", ggffww_decode(data))
+    loguru.logger.info("POST Response:", data)
+    loguru.logger.info("POST Response:", ggffww_decode(data))
 
     # 原始data数据
     origin_data = ggffww_decode(data)
@@ -97,6 +98,6 @@ if __name__ == "__main__":
     right_encoded_data = data
     # 测试的编码内容
     my_encoded = ggffww_encode(origin_data)
-    print('正确编码长度：', len(right_encoded_data), ' / 测试编码长度：', len(my_encoded))
-    print('正确编码：', right_encoded_data)
-    print('测试编码：', my_encoded)
+    loguru.logger.info('正确编码长度：', len(right_encoded_data), ' / 测试编码长度：', len(my_encoded))
+    loguru.logger.info('正确编码：', right_encoded_data)
+    loguru.logger.info('测试编码：', my_encoded)

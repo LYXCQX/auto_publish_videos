@@ -1,3 +1,6 @@
+import decimal
+
+import loguru
 from sqlalchemy import create_engine, Column, String, Text, DateTime, Integer, Date
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
@@ -48,7 +51,28 @@ class HomepageScanRecord(Base):
     next_scan_time = Column(DateTime)
 
 
-engine = create_engine('mysql+pymysql://root:leyuan521@34.81.86.216:3306/video_tools?charset=utf8mb4')
+class VideoGoods(Base):
+    __tablename__ = 'video_goods'
+    id = Column(Integer, primary_key=True)
+    goods_id = Column(String(250))
+    goods_name = Column(String(250))
+    goods_title = Column(String(500))
+    goods_des = Column(Text)
+    commission_rate = Column(String)
+    real_price = Column(String)
+    goods_price = Column(String)
+    sales_volume = Column(Integer)
+    brand = Column(String(50))
+    sales_script = Column(Text)
+    top_sales_script = Column(String(255))
+    state = Column(Integer)
+    create_time = Column(DateTime)
+    longitude = Column(String)
+    dimension = Column(String)
+    tips = Column(Text)
+
+
+engine = create_engine('mysql+pymysql://root:leyuan521@49.232.31.208:3306/video_tools?charset=utf8mb4')
 Session = sessionmaker(bind=engine)
 
 
@@ -56,4 +80,4 @@ def get_session():
     return Session()
 
 
-print(datetime.date.today())
+loguru.logger.info(datetime.date.today())

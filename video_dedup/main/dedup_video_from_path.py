@@ -1,3 +1,5 @@
+import loguru
+
 from common.constant import VideoStatus
 from model.model import DownloadVideoInfo, get_session
 from util.file_util import get_mp4_files, calculate_video_md5
@@ -25,10 +27,10 @@ def deduplicate_from_path():
         path = video_path['path']
         md5 = calculate_video_md5(path)
         video_name = video_path['file_name']
-        print('开始处理: {}'.format(video_name))
+        loguru.logger.info('开始处理: {}'.format(video_name))
         title = video_name.rsplit('.mp4', 1)[0]
         dedup_path = save_path + '/' + video_name
-        process_dedup_by_config(path, dedup_path, config)
+        process_dedup_by_config(path, {})
         # 写入到db中
         if write_db:
             video_info = DownloadVideoInfo(
@@ -43,7 +45,7 @@ def deduplicate_from_path():
             result.append(video_info)
 
         if remove:
-            print('去重完毕，原始文件移动到backup_path配置的路径中：', path)
+            loguru.logger.info('去重完毕，原始文件移动到backup_path配置的路径中：', path)
             shutil.move(path, backup_path)
     if result:
         session = get_session()
@@ -55,4 +57,4 @@ if __name__ == '__main__':
     t1 = time.time()
     deduplicate_from_path()
     t2 = time.time()
-    print('total cost time ', t2 - t1)
+    loguru.logger.info('total cost time ', t2 - t1)

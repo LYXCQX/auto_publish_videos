@@ -1,11 +1,13 @@
 import os
 import time
 import uuid
+from datetime import datetime
 from typing import List
 
 import cv2
 import loguru
 
+from model.model import VideoGoods
 from util.file_util import get_mp4_files, get_mp4_files_path
 from video_dedup.config_parser import Config
 from video_merge.datacls import VideoInfo
@@ -22,9 +24,9 @@ vertical_rotation: Rotation = Rotation.CLOCKWISE
 
 
 # if __name__ == '__main__':
-def merge_video(config: Config):
+def merge_video(config: Config, good: VideoGoods):
     start_time: float = time.time()
-    video_path_list = get_mp4_files_path(config.video_path)
+    video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand']}")
     video_info_list: List[VideoInfo] = get_video_info(video_path_list, config.max_sec)
     loguru.logger.info(f'视频拼接:获取视频信息完成,共计{len(video_info_list)}个视频:{video_info_list}')
 
@@ -34,7 +36,7 @@ def merge_video(config: Config):
     best_width = best_width
     best_height = best_height
     loguru.logger.info(f'视频拼接:最佳分辨率为{best_width}x{best_height}')
-    output_file_path = f"{config.video_temp} {time.time()}_{uuid.uuid4()}.mp4"
+    output_file_path = f"{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp4"
     # 开始对视频依次执行[剪裁],[旋转],[缩放],[帧同步],[拼接]操作
     output_video = cv2.VideoWriter(output_file_path, cv2.VideoWriter.fourcc(*'mp4v'), int(config.fps),
                                    (best_width, best_height))
@@ -128,7 +130,7 @@ def merge_video(config: Config):
 
 
 if __name__ == '__main__':
-    sourcePath = "D:\IDEA\workspace\\auto_publish_videos\\video\source\\aa"
+    sourcePath = "D:\IDEA\workspace\\auto_publish_videos\\video\source\\aa.py"
     # output_file_path = "D:\IDEA\workspace\\auto_publish_videos\\video\source\\1.mp4"
     fps = 30
     # best_width = 1280

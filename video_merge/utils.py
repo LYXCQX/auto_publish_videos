@@ -72,13 +72,13 @@ if __name__ == '__main__':
     # current_num = 180000
     # target_num = 150000
     # result = evenly_distribute_numbers(current_num, target_num)
-    # print(f"抽帧:{result}")
-    # print(len(result))
+    # loguru.logger.info(f"抽帧:{result}")
+    # loguru.logger.info(len(result))
 
     # 插帧示例用法
     current_num = 1148
     target_num = 1500
     start = time.time()
     result = evenly_interpolate_numbers(current_num, target_num)
-    print(time.time() - start)
-    print(f"插帧:{result}")
+    loguru.logger.info(time.time() - start)
+    loguru.logger.info(f"插帧:{result}")
