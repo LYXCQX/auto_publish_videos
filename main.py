@@ -1,3 +1,4 @@
+import argparse
 from datetime import datetime
 
 import loguru
@@ -42,8 +43,13 @@ def scheduled_job():
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Script Scheduler")
+    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    args = parser.parse_args()
     scheduler = BlockingScheduler()
     now = datetime.now()
-    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10,microsecond=0)
+    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute + 10, second=now.second, microsecond=0)
     scheduler.add_job(scheduled_job, 'interval', minutes=30, start_date=initial_execution_time)  # 每30分钟执行一次
+    if args.run_now:
+        scheduled_job()
     scheduler.start()

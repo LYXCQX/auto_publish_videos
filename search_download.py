@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import os
@@ -60,10 +61,15 @@ def call_main_script():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Script Scheduler")
+    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    args = parser.parse_args()
     scheduler = BlockingScheduler()
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
     scheduler.add_job(call_main_script, 'cron', hour=23, minute=0, start_date=initial_execution_time)
+    if args.run_now:
+        call_main_script()
     scheduler.start()
     # call_main_script()
