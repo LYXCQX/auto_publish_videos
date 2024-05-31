@@ -110,7 +110,7 @@ def index():
 def get_image():
     # Check if the image file exists for the given UUID
     image_path = "http://49.232.31.208/img/login/xhs_" + request.remote_addr + ".png"  # Assuming images are saved in 'static' folder
-    res = jsonify({'success': True, 'imageUrl': f'/{image_path}'})
+    res = jsonify({'success': True, 'imageUrl': f'{image_path}'})
     if qr_login.get(request.remote_addr):
         res = jsonify({'success': True, 'msg': '登录成功'})
     return res
