@@ -143,12 +143,8 @@ def get_image():
 def add_user():
     platform = 'xhs'
     lt = 'qrcode'
-    base64_image = asyncio.run(user_login(platform, lt))
-
-    if base64_image:
-        return jsonify({'success': True, 'user_id': 'user_id', 'base64Image': base64_image})
-    else:
-        return jsonify({'success': False})
+    asyncio.run(user_login(platform, lt))
+    return jsonify({'success': True})
 
 
 async def user_login(platform, lt):
