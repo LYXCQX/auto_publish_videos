@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XiaoHongShu Crawler</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+        }
+        #result {
+            margin-top: 20px;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<h1>XiaoHongShu Crawler</h1>
+<button id="startButton">添加用户</button>
+<div id="result"></div>
+
+<script>
+    async function startCrawler() {
+        try {
+            const response = await fetch('/add_user');
+            const data = await response.json();
+            if (data.success && data.base64Image) {
+                const image = document.createElement('img');
+                image.src =  data.base64Image;
+                document.getElementById('result').innerHTML = '';
+                document.getElementById('result').appendChild(image);
+            } else {
+                console.error('Failed to fetch image data');
+            }
+        } catch (error) {
+            console.error('Error occurred:', error);
+        }
+    }
+
+    document.getElementById('startButton').addEventListener('click', startCrawler);
+
+    // Function to trigger saving cookies after QR code login
+    async function saveCookiesAfterQRLogin() {
+        try {
+            const response = await fetch('/save_cookies', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ qrLoggedIn: true })
+            });
+            const data = await response.json();
+            if (data.success) {
+                console.log('Cookies saved successfully!');
+            } else {
+                console.error('Failed to save cookies');
+            }
+        } catch (error) {
+            console.error('Error occurred:', error);
+        }
+    }
+
+    // Call saveCookiesAfterQRLogin every 10 seconds
+    setInterval(saveCookiesAfterQRLogin, 10000);
+</script>
+</body>
+</html>
