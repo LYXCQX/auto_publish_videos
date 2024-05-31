@@ -1,6 +1,8 @@
 import asyncio
 import os
 import sys
+import threading
+import time
 
 from requests.exceptions import RetryError
 
@@ -26,6 +28,22 @@ loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 loguru.logger.add("info.log", format="{time} {level} {message}", level="INFO")
 app = Flask(__name__)
 qr_login = {}
+EXPIRATION_TIME = 60
+
+
+def cleanup_expired_entries():
+    while True:
+        time.sleep(60)  # Run cleanup every 60 seconds
+        current_time = time.time()
+        keys_to_delete = [key for key, value in qr_login.items() if current_time > value['expiry']]
+        for key in keys_to_delete:
+            del qr_login[key]
+            print(f"Deleted expired entry for UUID: {key}")
+
+
+# Start the cleanup thread
+cleanup_thread = threading.Thread(target=cleanup_expired_entries, daemon=True)
+cleanup_thread.start()
 
 
 async def add_user_login(crawler) -> str:
@@ -71,7 +89,10 @@ async def add_user_login(crawler) -> str:
             loguru.logger.info(f"user_id{login_obj.user_id}")
             await login_obj.begin()
             await crawler.xhs_client.update_cookies(browser_context=crawler.browser_context)
-            qr_login[request.remote_addr] = True
+            qr_login[request.remote_addr] = {
+                'status': True,
+                'expiry': time.time() + EXPIRATION_TIME
+            }
             return login_obj.login_par
         else:
             loguru.logger.info("xhs  cookie 有效，不需要再次获取")
@@ -113,7 +134,7 @@ def get_image():
     # Check if the image file exists for the given UUID
     image_path = "http://49.232.31.208/img/login/xhs_" + request.remote_addr + ".png"  # Assuming images are saved in 'static' folder
     res = jsonify({'success': True, 'imageUrl': f'{image_path}'})
-    if qr_login.get(request.remote_addr):
+    if request.remote_addr in qr_login and qr_login[request.remote_addr]['status']:
         res = jsonify({'success': True, 'msg': '登录成功'})
     return res
 

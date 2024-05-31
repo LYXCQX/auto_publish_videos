@@ -67,7 +67,7 @@
             max-width: 100%;
             height: auto;
             border-radius: 8px;
-            animation: fadeIn 0.5s ease forwards;
+            /*animation: fadeIn 0.5s ease forwards;*/
         }
     </style>
 </head>
@@ -89,7 +89,7 @@
 
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/auto_video/get_image`);
+            const response = await fetch(`/get_image`);
             const data = await response.json();
             if (data.success && data.imageUrl) {
                 const image = document.createElement('img');
