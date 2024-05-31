@@ -11,29 +11,50 @@ if [ ! -d "$VENV_PATH" ]; then
   python3 -m venv $VENV_PATH
 fi
 
-# Activate the virtual environment
+# 激活虚拟环境
 . $VENV_PATH/bin/activate
 
-# Install dependencies
+# 安装依赖
 pip install -r requirements.txt
 
-# Install playwright dependencies
+# 安装 Playwright 依赖
 playwright install chromium firefox
-# 运行 search_download.py
-python3 search_download.py &
-SEARCH_DOWNLOAD_PID=$!
 
-# 运行 split.py
-python3 split.py &
-SPLIT_PID=$!
+# 检查并运行 search_download.py
+if ! pgrep -f search_download.py > /dev/null; then
+  python3 search_download.py &
+  SEARCH_DOWNLOAD_PID=$!
+else
+  echo "search_download.py is already running"
+fi
 
-# 运行 main.py
-python3 main.py &
-MAIN_PID=$!
+# 检查并运行 split.py
+if ! pgrep -f split.py > /dev/null; then
+  python3 split.py &
+  SPLIT_PID=$!
+else
+  echo "split.py is already running"
+fi
+
+# 检查并运行 main.py
+if ! pgrep -f main.py > /dev/null; then
+  python3 main.py &
+  MAIN_PID=$!
+else
+  echo "main.py is already running"
+fi
 
 # 等待所有后台进程完成
-wait $SEARCH_DOWNLOAD_PID
-wait $SPLIT_PID
-wait $MAIN_PID
+if [ -n "$SEARCH_DOWNLOAD_PID" ]; then
+  wait $SEARCH_DOWNLOAD_PID
+fi
+
+if [ -n "$SPLIT_PID" ]; then
+  wait $SPLIT_PID
+fi
+
+if [ -n "$MAIN_PID" ]; then
+  wait $MAIN_PID
+fi
 
 echo "All scripts have finished executing."
