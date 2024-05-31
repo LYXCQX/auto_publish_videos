@@ -66,7 +66,9 @@ async def add_user_login(crawler) -> str:
                 context_page=crawler.context_page,
                 cookie_str=config.COOKIES
             )
+            loguru.logger.info(f"request.remote_addr{request.remote_addr}")
             login_obj.user_id = request.remote_addr
+            loguru.logger.info(f"user_id{login_obj.user_id}")
             await login_obj.begin()
             await crawler.xhs_client.update_cookies(browser_context=crawler.browser_context)
             qr_login[request.remote_addr] = True
