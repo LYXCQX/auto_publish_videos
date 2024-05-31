@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# 确保脚本遇到错误时立即停止
+set -e
 cd /opt/software/auto_publish_videos
 # 定义虚拟环境路径
 VENV_PATH="/opt/software/auto_publish_videos/venv"
@@ -10,7 +12,7 @@ if [ ! -d "$VENV_PATH" ]; then
 fi
 
 # Activate the virtual environment
-source myenv/bin/activate
+. $VENV_PATH/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
