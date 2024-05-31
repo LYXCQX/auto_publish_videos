@@ -73,6 +73,8 @@ async def add_user_login(crawler) -> str:
             await crawler.xhs_client.update_cookies(browser_context=crawler.browser_context)
             qr_login[request.remote_addr] = True
             return login_obj.login_par
+        else:
+            loguru.logger.info("xhs  cookie 有效，不需要再次获取")
 
         loguru.logger.info("[XiaoHongShuCrawler.start] Xhs Crawler finished ...")
 
