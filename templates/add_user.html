@@ -6,69 +6,106 @@
     <title>XiaoHongShu Crawler</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
-            padding: 20px;
-            text-align: center;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
         #result {
             margin-top: 20px;
         }
+
         img {
             max-width: 100%;
             height: auto;
-            margin-top: 20px;
+            border-radius: 8px;
+            animation: fadeIn 0.5s ease forwards;
         }
     </style>
 </head>
 <body>
-<h1>XiaoHongShu Crawler</h1>
-<button id="startButton">添加用户</button>
-<div id="result"></div>
+<div class="container">
+    <h1>XiaoHongShu Crawler</h1>
+    <button id="startButton">添加用户</button>
+    <div id="result"></div>
+</div>
 
 <script>
     async function startCrawler() {
         try {
-            const response = await fetch('/add_user');
+            const response = await fetch(`/add_user`);
+        } catch (error) {
+            console.error('Error occurred:', error);
+        }
+    }
+
+    const interval = setInterval(async () => {
+        try {
+            const response = await fetch(`/get_image`);
             const data = await response.json();
-            if (data.success && data.base64Image) {
+            if (data.success && data.imageUrl) {
                 const image = document.createElement('img');
-                image.src =  data.base64Image;
+                image.src = data.imageUrl;
                 document.getElementById('result').innerHTML = '';
                 document.getElementById('result').appendChild(image);
-            } else {
-                console.error('Failed to fetch image data');
+            }else if (data.msg==='登录成功'){
+                clearInterval(interval); // Stop polling
+                document.getElementById('result').innerHTML = data.msg;
             }
         } catch (error) {
             console.error('Error occurred:', error);
         }
-    }
+    }, 5000); // Poll every 5 seconds
 
     document.getElementById('startButton').addEventListener('click', startCrawler);
-
-    // Function to trigger saving cookies after QR code login
-    async function saveCookiesAfterQRLogin() {
-        try {
-            const response = await fetch('/save_cookies', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ qrLoggedIn: true })
-            });
-            const data = await response.json();
-            if (data.success) {
-                console.log('Cookies saved successfully!');
-            } else {
-                console.error('Failed to save cookies');
-            }
-        } catch (error) {
-            console.error('Error occurred:', error);
-        }
-    }
-
-    // Call saveCookiesAfterQRLogin every 10 seconds
-    setInterval(saveCookiesAfterQRLogin, 10000);
 </script>
 </body>
 </html>

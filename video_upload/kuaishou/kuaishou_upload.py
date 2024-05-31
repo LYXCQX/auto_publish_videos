@@ -56,7 +56,10 @@ async def kuaishou_cookie_gen(account_file):
         # Pause the page, and start recording manually.
         page = await context.new_page()
         await page.goto("https://cp.kuaishou.com/article/publish/video")
-        await page.pause()
+        await page.locator('#login').click()
+        await page.locator('#platform-switch-qrcode').click()
+        img_url = await page.locator('#qrcode img').get_attribute('src')
+        await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=60000)
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=account_file)
 

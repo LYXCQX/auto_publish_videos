@@ -1,8 +1,6 @@
 import asyncio
 import os
 import sys
-import time
-import uuid
 
 from requests.exceptions import RetryError
 
@@ -23,10 +21,12 @@ from MediaCrawler.main import CrawlerFactory
 from MediaCrawler.media_platform.xhs.login import XiaoHongShuLogin
 from MediaCrawler.proxy import IpInfoModel
 from MediaCrawler.proxy.proxy_ip_pool import create_ip_pool
+
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 loguru.logger.add("info.log", format="{time} {level} {message}", level="INFO")
 app = Flask(__name__)
 qr_login = {}
+
 
 async def add_user_login(crawler) -> str:
     playwright_proxy_format, httpx_proxy_format = None, None
@@ -66,8 +66,10 @@ async def add_user_login(crawler) -> str:
                 context_page=crawler.context_page,
                 cookie_str=config.COOKIES
             )
-            login_obj.need_wait = False
+            login_obj.user_id = request.remote_addr
             await login_obj.begin()
+            await crawler.xhs_client.update_cookies(browser_context=crawler.browser_context)
+            qr_login[request.remote_addr] = True
             return login_obj.login_par
 
         loguru.logger.info("[XiaoHongShuCrawler.start] Xhs Crawler finished ...")
@@ -86,7 +88,8 @@ async def save_cookie(crawler):
         sys.exit()
 
     wait_redirect_seconds = 5
-    utils.logger.info(f"[XiaoHongShuLogin.login_by_qrcode] Login successful then wait for {wait_redirect_seconds} seconds redirect ...")
+    utils.logger.info(
+        f"[XiaoHongShuLogin.login_by_qrcode] Login successful then wait for {wait_redirect_seconds} seconds redirect ...")
     await asyncio.sleep(wait_redirect_seconds)
     crawler.xhs_client.update_cookies(browser_context=crawler.browser_context)
 
@@ -101,6 +104,16 @@ def index():
     return render_template('add_user.html')
 
 
+@app.route('/get_image')
+def get_image():
+    # Check if the image file exists for the given UUID
+    image_path = "http://49.232.31.208/img/login/xhs_" + request.remote_addr + ".png"  # Assuming images are saved in 'static' folder
+    res = jsonify({'success': True, 'imageUrl': f'/{image_path}'})
+    if qr_login.get(request.remote_addr):
+        res = jsonify({'success': True, 'msg': '登录成功'})
+    return res
+
+
 @app.route('/add_user')
 def add_user():
     platform = 'xhs'
@@ -108,7 +121,7 @@ def add_user():
     base64_image = asyncio.run(user_login(platform, lt))
 
     if base64_image:
-        return jsonify({'success': True,'user_id': 'user_id', 'base64Image': base64_image})
+        return jsonify({'success': True, 'user_id': 'user_id', 'base64Image': base64_image})
     else:
         return jsonify({'success': False})
 
@@ -127,23 +140,10 @@ async def user_login(platform, lt):
         start_page=1
     )
     img = await add_user_login(crawler)
-    qr_login[request.remote_addr] = crawler
     if config.SAVE_DATA_OPTION == "db":
         await db.close()
     return img
 
-@app.route('/save_cookies', methods=['POST'])
-def save_cookies():
-    if qr_login[request.remote_addr]:
-        asyncio.run(save_cookie(qr_login[request.remote_addr]))
-    qr_logged_in = request.json.get('qrLoggedIn', False)
-    if qr_logged_in:
-        # Save cookies after QR code login
-        # Example: crawler.save_cookies()
-        # Store QR code login status in memory
-        qr_login[request.remote_addr] = True  # Using client IP address as key
-        return jsonify({'success': True})
-    else:
-        return jsonify({'success': False})
+
 if __name__ == '__main__':
     app.run(debug=True)
