@@ -14,7 +14,8 @@ from MediaCrawler.tools import utils
 from util.db.sql_utils import getdb
 from util.file_util import download_video
 from video_dedup.config_parser import read_dedup_config
-
+loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
+loguru.logger.add("info.log", format="{time} {level} {message}", level="INFO")
 # 获取当前脚本文件的目录
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -66,7 +67,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     scheduler = BlockingScheduler()
     now = datetime.now()
-    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
+    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
     scheduler.add_job(call_main_script, 'cron', hour=23, minute=0, start_date=initial_execution_time)
     if args.run_now:

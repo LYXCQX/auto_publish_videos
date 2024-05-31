@@ -2,6 +2,7 @@ import argparse
 from datetime import datetime
 
 import loguru
+loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from video_dedup.config_parser import read_dedup_config
