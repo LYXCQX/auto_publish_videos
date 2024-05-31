@@ -1,8 +1,14 @@
 #!/bin/bash
 
-# 确保脚本遇到错误时立即停止
-set -e
-python3 -m venv myenv
+cd /opt/software/auto_publish_videos
+# 定义虚拟环境路径
+VENV_PATH="/opt/software/auto_publish_videos/venv"
+
+# 创建虚拟环境（如果不存在）
+if [ ! -d "$VENV_PATH" ]; then
+  python3 -m venv $VENV_PATH
+fi
+
 # Activate the virtual environment
 source myenv/bin/activate
 
