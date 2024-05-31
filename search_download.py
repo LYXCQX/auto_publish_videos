@@ -64,6 +64,6 @@ if __name__ == "__main__":
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
-    scheduler.add_job(call_main_script, 'cron', hour=23, minute=0)
+    scheduler.add_job(call_main_script, 'cron', hour=23, minute=0, start_date=initial_execution_time)
     scheduler.start()
     # call_main_script()
