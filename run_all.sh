@@ -18,7 +18,7 @@ fi
 pip install -r requirements.txt
 
 # Install playwright dependencies
-npx playwright install chromium firefox
+playwright install chromium firefox
 # 运行 search_download.py
 python3 search_download.py &
 SEARCH_DOWNLOAD_PID=$!
