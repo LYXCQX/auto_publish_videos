@@ -1,5 +1,6 @@
 from datetime import datetime
 
+import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from video_dedup.config_parser import read_dedup_config
@@ -10,7 +11,10 @@ config = read_dedup_config()
 
 def split_job():
     # remove_audio(config.need_split_path, config.video_path)
-    split_video(config.need_split_path, config.video_path)
+    try:
+        split_video(config.need_split_path, config.video_path)
+    except Exception as e:
+        loguru.logger.error(f"分割文件失败: {e}")
 
 
 if __name__ == '__main__':

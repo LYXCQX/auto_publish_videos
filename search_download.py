@@ -6,6 +6,7 @@ import sys
 import time
 from datetime import datetime
 
+import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from MediaCrawler.tools import utils
@@ -25,31 +26,37 @@ config = read_dedup_config()
 
 
 def call_main_script():
-    db = getdb()
-    brands = db.fetchall('select distinct(brand) from video_goods where state = 1')
-    for brand in brands:
-        platform = 'xhs'
-        lt = 'qrcode'
-        type = 'search'
-        start = 1
-        brand = brand['brand']
-        keywords = brand + '视频素材'
-
-        asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
-        json_store_path = f'data/{platform}'
-        file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
-        file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
-        videos = json.load(open(file_patch, encoding='utf-8'))
-        for video in videos:
-            down_path = f"{config.need_split_path}{brand}"
-            if not os.path.exists(down_path):
-                os.makedirs(down_path)
-            video_path = f"{down_path}\{video['note_id']}.mp4"
-            if not os.path.exists(video_path):
-                if video['video_url_none_sy'] != '':
-                    download_video(video['video_url_none_sy'], video_path)
-                    time.sleep(1)
-        os.remove(file_patch)
+    try:
+        db = getdb()
+        brands = db.fetchall('select distinct(brand) from video_goods where state = 1')
+        for brand in brands:
+            platform = 'xhs'
+            lt = 'qrcode'
+            type = 'search'
+            start = 1
+            brand = brand['brand']
+            keywords = brand + '视频素材'
+    
+            asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
+            json_store_path = f'data/{platform}'
+            file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
+            file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
+            videos = json.load(open(file_patch, encoding='utf-8'))
+            for video in videos:
+                try:
+                    down_path = f"{config.need_split_path}{brand}"
+                    if not os.path.exists(down_path):
+                        os.makedirs(down_path)
+                    video_path = f"{down_path}\{video['note_id']}.mp4"
+                    if not os.path.exists(video_path):
+                        if video['video_url_none_sy'] != '':
+                            download_video(video['video_url_none_sy'], video_path)
+                            time.sleep(1)
+                except Exception as e:
+                    loguru.logger.error(f"下载视频时发生错误: {e}")
+            os.remove(file_patch)
+    except Exception as e:
+        loguru.logger.error(f"下载视频时发生错误: {e}")
 
 
 if __name__ == "__main__":
