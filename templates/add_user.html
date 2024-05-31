@@ -81,7 +81,7 @@
 <script>
     async function startCrawler() {
         try {
-            const response = await fetch(`/add_user`);
+            const response = await fetch(`/auto_video/add_user`);
         } catch (error) {
             console.error('Error occurred:', error);
         }
@@ -89,7 +89,7 @@
 
     const interval = setInterval(async () => {
         try {
-            const response = await fetch(`/get_image`);
+            const response = await fetch(`/auto_video/get_image`);
             const data = await response.json();
             if (data.success && data.imageUrl) {
                 const image = document.createElement('img');
