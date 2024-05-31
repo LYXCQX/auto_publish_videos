@@ -103,6 +103,6 @@ def crop_and_restore_video(video_path, output_path):
 
 # 示例调用
 if __name__ == '__main__':
-    video_path = "D:\IDEA\workspace\\auto_publish_videos\\video\download\\1.mp4"
-    output_path = "D:\IDEA\workspace\\auto_publish_videos\\video\download\\2.mp4"
+    video_path = "D:/IDEA/workspace//auto_publish_videos//video/download//1.mp4"
+    output_path = "D:/IDEA/workspace//auto_publish_videos//video/download//2.mp4"
     crop_and_restore_video(video_path, output_path)

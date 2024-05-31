@@ -68,7 +68,7 @@ def remove_audio(video_path):
 
 
 if __name__ == '__main__':
-    remove_audio("D:\IDEA\workspace\\auto_publish_videos\\video\download",
-                 "D:\IDEA\workspace\\auto_publish_videos\\video\source\\")
-    split_video("D:\IDEA\workspace\\auto_publish_videos\\video\source")
+    remove_audio("D:/IDEA/workspace//auto_publish_videos//video/download",
+                 "D:/IDEA/workspace//auto_publish_videos//video/source//")
+    split_video("D:/IDEA/workspace//auto_publish_videos//video\source")
     # split_video("D:\IDEA\workspace\\auto_publish_videos\\video\source\\tes")

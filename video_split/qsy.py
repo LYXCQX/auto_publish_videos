@@ -5,9 +5,9 @@ import loguru
 import numpy
 from moviepy import editor
 
-VIDEO_PATH = "D:\IDEA\workspace\\auto_publish_videos\\video\source"
-OUTPUT_PATH = "D:\IDEA\workspace\\auto_publish_videos\\video\source"
-TEMP_VIDEO = "D:\IDEA\workspace\\auto_publish_videos\\video\source\\temp"
+VIDEO_PATH = "D:/IDEA/workspace//auto_publish_videos//video/source"
+OUTPUT_PATH = "D:/IDEA/workspace//auto_publish_videos//video/source"
+TEMP_VIDEO = "D:/IDEA/workspace//auto_publish_videos//video/source//temp"
 
 
 class WatermarkRemover():

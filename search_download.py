@@ -49,7 +49,7 @@ def call_main_script():
                     down_path = f"{config.need_split_path}{brand}"
                     if not os.path.exists(down_path):
                         os.makedirs(down_path)
-                    video_path = f"{down_path}\{video['note_id']}.mp4"
+                    video_path = f"{down_path}/{video['note_id']}.mp4"
                     if not os.path.exists(video_path):
                         if video['video_url_none_sy'] != '':
                             download_video(video['video_url_none_sy'], video_path)
