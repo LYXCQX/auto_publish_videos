@@ -4,7 +4,7 @@
 set -e
 cd /opt/software/auto_publish_videos
 # 定义虚拟环境路径
-VENV_PATH="/opt/software/auto_publish_videos/venv"
+VENV_PATH="venv"
 
 # 创建虚拟环境（如果不存在）
 if [ ! -d "$VENV_PATH" ]; then
