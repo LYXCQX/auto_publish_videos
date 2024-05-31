@@ -38,7 +38,13 @@ def cleanup_expired_entries():
         keys_to_delete = [key for key, value in qr_login.items() if current_time > value['expiry']]
         for key in keys_to_delete:
             del qr_login[key]
-            print(f"Deleted expired entry for UUID: {key}")
+            try:
+                qr_path = f'/opt/img/login/xhs_{key}.png'
+                if os.path.exists(qr_path):
+                    os.remove(qr_path)
+            except:
+                loguru.logger.info('删除二维码文件失败')
+            loguru.logger.info(f"Deleted expired entry for UUID: {key}")
 
 
 # Start the cleanup thread
