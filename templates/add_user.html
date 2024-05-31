@@ -82,28 +82,38 @@
     async function startCrawler() {
         try {
             const response = await fetch(`/auto_video/add_user`);
+            pollForImage()
         } catch (error) {
             console.error('Error occurred:', error);
         }
     }
 
-    const interval = setInterval(async () => {
-        try {
-            const response = await fetch(`/get_image`);
-            const data = await response.json();
-            if (data.success && data.imageUrl) {
-                const image = document.createElement('img');
-                image.src = data.imageUrl;
-                document.getElementById('result').innerHTML = '';
-                document.getElementById('result').appendChild(image);
-            }else if (data.msg==='登录成功'){
-                clearInterval(interval); // Stop polling
-                document.getElementById('result').innerHTML = data.msg;
+    function pollForImage() {
+        const startTime = Date.now();
+        const interval = setInterval(async () => {
+            if (Date.now() - startTime > 120000) { // 120000 ms = 2 minutes
+                clearInterval(interval); // Stop polling after 2 minutes
+                console.error('Polling timed out after 2 minutes');
+                return;
             }
-        } catch (error) {
-            console.error('Error occurred:', error);
-        }
-    }, 5000); // Poll every 5 seconds
+
+            try {
+                const response = await fetch(`/auto_video/get_image`);
+                const data = await response.json();
+                if (data.success && data.imageUrl) {
+                    const image = document.createElement('img');
+                    image.src = data.imageUrl;
+                    document.getElementById('result').innerHTML = '';
+                    document.getElementById('result').appendChild(image);
+                }else if (data.msg==='登录成功'){
+                    clearInterval(interval); // Stop polling
+                    document.getElementById('result').innerHTML = data.msg;
+                }
+            } catch (error) {
+                console.error('Error occurred:', error);
+            }
+        }, 5000); // Poll every 5 seconds
+    }
 
     document.getElementById('startButton').addEventListener('click', startCrawler);
 </script>
