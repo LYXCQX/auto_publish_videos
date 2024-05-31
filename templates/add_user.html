@@ -83,6 +83,10 @@
         try {
             pollForImage()
             const response = await fetch(`/auto_video/add_user`);
+            if (response.success) {
+                clearInterval(interval); // Stop polling
+                document.getElementById('result').innerHTML = '登录成功';
+            }
         } catch (error) {
             console.error('Error occurred:', error);
         }
