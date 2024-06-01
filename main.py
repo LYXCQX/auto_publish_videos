@@ -49,7 +49,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
-    scheduler.add_job(scheduled_job, 'interval', minutes=30)  # 每30分钟执行一次
+    scheduler.add_job(scheduled_job, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
     if args.run_now:
         scheduled_job()
     scheduler.start()
