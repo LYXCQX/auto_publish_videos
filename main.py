@@ -28,8 +28,10 @@ def scheduled_job():
         video_goods = db.fetchall("select * from video_goods")
         # 循环并找出可以生成视频（未到发布条数） 还没生成视频的用户
         for user_info in user_infos:
+            loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
                 for video_good in video_goods:
+                    loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == video_good['type']:
                         video_goods_publish = db.fetchall(

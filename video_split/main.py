@@ -9,6 +9,7 @@ from util.file_util import get_mp4_files_path, delete_file
 
 def split_video(folder_path, source_path):
     video_files = get_mp4_files_path(folder_path)
+    loguru.logger.info(f"分割视频需要处理的数据有{len(video_files)}条")
     for video_path in video_files:
         split_video_one(video_path, folder_path, source_path)
 
