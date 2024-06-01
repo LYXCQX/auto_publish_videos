@@ -8,13 +8,14 @@ from util.file_util import get_mp4_files_path, delete_file
 
 
 def split_video(folder_path, source_path):
+    model = TransNetV2()
     video_files = get_mp4_files_path(folder_path)
     loguru.logger.info(f"分割视频需要处理的数据有{len(video_files)}条")
     for video_path in video_files:
-        split_video_one(video_path, folder_path, source_path)
+        split_video_one(video_path, folder_path, source_path,model)
 
 
-def split_video_one(video_path, folder_path, source_path):
+def split_video_one(video_path, folder_path, source_path,model):
     try:
         video_name = os.path.basename(video_path)
         video_name_without_ext = os.path.splitext(video_name)[0]
@@ -23,7 +24,6 @@ def split_video_one(video_path, folder_path, source_path):
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 
-        model = TransNetV2()
         video_frames, single_frame_predictions, all_frame_predictions = model.predict_video_2(video_path)
         scenes = model.predictions_to_scenes(single_frame_predictions)
 
