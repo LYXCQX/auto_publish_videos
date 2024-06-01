@@ -2,6 +2,8 @@ import argparse
 from datetime import datetime
 
 import loguru
+from filelock import FileLock
+
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 from apscheduler.schedulers.blocking import BlockingScheduler
 
@@ -9,12 +11,13 @@ from video_dedup.config_parser import read_dedup_config
 from video_split.main import remove_audio, split_video
 
 config = read_dedup_config()
-
+lock = FileLock("/opt/software/auto_publish_videos/job.lock")
 
 def split_job():
     # remove_audio(config.need_split_path, config.video_path)
     try:
-        split_video(config.need_split_path, config.video_path)
+        with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
+            split_video(config.need_split_path, config.video_path)
     except Exception as e:
         loguru.logger.error(f"分割文件失败: {e}")
 

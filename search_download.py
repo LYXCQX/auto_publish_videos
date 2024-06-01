@@ -9,6 +9,7 @@ from datetime import datetime
 
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
+from filelock import FileLock
 
 from MediaCrawler.tools import utils
 from util.db.sql_utils import getdb
@@ -25,8 +26,13 @@ sys.path.append(media_crawler_path)
 from MediaCrawler.main import run_crawler_with_args
 
 config = read_dedup_config()
-
-
+lock = FileLock("/opt/software/auto_publish_videos/job.lock")
+def lock_download():
+    try:
+        with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
+            call_main_script()
+    except Exception as e:
+        loguru.logger.error(f"分割文件失败: {e}")
 def call_main_script():
     try:
         db = getdb()
@@ -69,8 +75,8 @@ if __name__ == "__main__":
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
-    scheduler.add_job(call_main_script, 'cron', hour=23, minute=0, max_instances=1)
+    scheduler.add_job(lock_download, 'cron', hour=23, minute=0, max_instances=1)
     if args.run_now:
-        call_main_script()
+        lock_download()
     scheduler.start()
     # call_main_script()

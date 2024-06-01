@@ -3,6 +3,7 @@ from datetime import datetime
 
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
+from filelock import FileLock
 
 from util.db.sql_utils import getdb
 from video_dedup.config_parser import read_dedup_config
@@ -11,7 +12,13 @@ from video_dedup.video_dedup_by_config import process_dedup_by_config
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 config = read_dedup_config()
 
-
+lock = FileLock("/opt/software/auto_publish_videos/job.lock")
+def lock_create_video():
+    try:
+        with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
+            scheduled_job()
+    except Exception as e:
+        loguru.logger.error(f"生成视频失败: {e}")
 def scheduled_job():
     try:
         db = getdb()
@@ -49,7 +56,7 @@ if __name__ == '__main__':
     scheduler = BlockingScheduler()
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
-    scheduler.add_job(scheduled_job, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
+    scheduler.add_job(lock_create_video, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
     if args.run_now:
-        scheduled_job()
+        lock_create_video()
     scheduler.start()
