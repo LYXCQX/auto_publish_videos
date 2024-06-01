@@ -15,8 +15,20 @@ def download_video(url, output_filename):
     loguru.logger.info(f'视频下载链接：{url}')
     try:
         # 发送HTTP GET请求来获取视频数据
+
+        # 发送HTTP HEAD请求来获取视频文件大小
         response = requests.get(url, stream=True, timeout=(10, 300))
-        response.raise_for_status()  # 检查是否有错误发生
+        response.raise_for_status()
+        max_size_mb = 500
+        # 从响应头中获取内容长度（文件大小）
+        file_size = int(response.headers.get('Content-Length', 0))
+        max_size_bytes = max_size_mb * 1024 * 1024
+
+        # 检查文件大小是否超过最大限制
+        if file_size > max_size_bytes:
+            loguru.logger.error(f"文件太大，大小为 {file_size / (1024 * 1024):.2f} MB，超过最大限制 {max_size_mb} MB。")
+            return
+
         # tmp_file = base_video_url + 'tmp.mp4'
         # 打开一个本地文件用于保存视频数据
         with open(output_filename, 'wb') as file:
