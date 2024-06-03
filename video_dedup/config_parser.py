@@ -36,6 +36,7 @@ class Config:
         self.top_title_gap = 0
         self.bottom_title_text = ''
         self.bottom_title_gap = 0
+        self.bottom_sales = 0
         self.fadein_duration = 0
         self.fadeout_duration = 0
         self.gauss_step = -1
@@ -119,6 +120,7 @@ def read_dedup_config():
     config.top_title_gap = parser.getfloat('dedup_step', 'top_title_gap')
     config.bottom_title_text = parser.get('dedup_step', 'bottom_title_text')
     config.bottom_title_gap = parser.getfloat('dedup_step', 'bottom_title_gap')
+    config.bottom_sales = eval(parser.get('dedup_step', 'bottom_sales'))
     config.fadein_duration = parser.getint('dedup_step', 'fadein_duration')
     config.fadeout_duration = parser.getint('dedup_step', 'fadeout_duration')
     config.gauss_step = parser.getint('dedup_step', 'gauss_step')

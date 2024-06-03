@@ -1,4 +1,5 @@
 import argparse
+import random
 from datetime import datetime
 
 import loguru
@@ -13,12 +14,16 @@ loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 config = read_dedup_config()
 
 lock = FileLock("/opt/software/auto_publish_videos/job.lock")
+
+
 def lock_create_video():
     try:
         with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
             scheduled_job()
     except Exception as e:
         loguru.logger.error(f"生成视频失败: {e}")
+
+
 def scheduled_job():
     try:
         db = getdb()
@@ -31,19 +36,23 @@ def scheduled_job():
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
                 for video_good in video_goods:
+                    video_good['sales_script'] = random.choice(config.bottom_sales)+ video_good['sales_script']
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == video_good['type']:
                         video_goods_publish = db.fetchall(
                             f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
-                        if len(video_goods_publish) < user_info['pub_num'] and video_good['id'] not in [obj['vg_id'] for obj in
+                        if len(video_goods_publish) < user_info['pub_num'] and video_good['id'] not in [obj['vg_id'] for
+                                                                                                        obj in
                                                                                                         video_goods_publish]:
                             try:
                                 video_path = process_dedup_by_config(config, video_good)
-                                db.execute(f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`, `state`) "
-                                           f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}',{1})")
+                                db.execute(
+                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`, `state`) "
+                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}',{1})")
                             except Exception as e:
-                                loguru.logger.exception(f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
+                                loguru.logger.exception(
+                                    f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
                                 pass
             except Exception as e:
                 loguru.logger.error(f"生成要发布的视频失败: {e}")
