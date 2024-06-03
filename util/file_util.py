@@ -81,7 +81,10 @@ def get_font_files(folder_path):
     font_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(".ttf") or file.endswith(".otf"):
+            if (file.endswith(tuple(".ttf")) or
+                    file.endswith(tuple(".woff")) or
+                    file.endswith(tuple(".woff2")) or
+                    file.endswith(tuple(".otf"))):
                 font_files.append(os.path.join(root, file))
     return font_files
 
@@ -90,9 +93,9 @@ def get_audio_files(folder_path):
     audio_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if (file.endswith(".mp3") or file.endswith(".wav")
-                    or file.endswith(".flac") or file.endswith(".aac")
-                    or file.endswith(".ogg")):
+            if (file.endswith(tuple(".mp3")) or file.endswith(tuple(".wav"))
+                    or file.endswith(tuple(".flac")) or file.endswith(tuple(".aac"))
+                    or file.endswith(tuple(".ogg"))):
                 audio_files.append(os.path.join(root, file))
     return audio_files
 
@@ -101,7 +104,7 @@ def get_mp4_files_path(folder_path):
     mp4_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(".mp4"):
+            if file.endswith(tuple(".mp4")):
                 path = os.path.join(root, file)
                 mp4_files.append(path)
     return mp4_files
@@ -163,6 +166,7 @@ def close_file_handle(file_path):
             for handle in proc.open_files():
                 if handle.path == file_path:
                     proc.kill()  # 终止占用文件的进程
-                    loguru.logger.info(f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
+                    loguru.logger.info(
+                        f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
