@@ -23,7 +23,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
     input_video = ''
     try:
         goods_des = good['goods_des']
-        create_audio(goods_des, audio_path_tmp, config.role, config.rate, config.volume)
+        create_audio(goods_des, audio_path_tmp, random.choice(config.role) , config.rate, config.volume)
         audio_stream = read_ffmpeg_audio_from_file(audio_path_tmp)
         merged_audio = AudioSegment.from_file(audio_path_tmp)
         config.max_sec = AudioSegment.from_file(audio_path_tmp).duration_seconds

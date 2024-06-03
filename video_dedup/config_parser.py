@@ -134,7 +134,7 @@ def read_dedup_config():
     config.data = parser.get('dedup_step', 'data')
     config.max_sec = parser.get('dedup_step', 'max_sec')
     config.fps = parser.get('dedup_step', 'fps')
-    config.role = parser.get('dedup_step', 'role')
+    config.role = eval(parser.get('dedup_step', 'role'))
     config.rate = parser.get('dedup_step', 'rate')
     config.volume = parser.get('dedup_step', 'volume')
     config.font_size = parser.get('dedup_step', 'font_size')
