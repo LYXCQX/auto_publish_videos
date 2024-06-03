@@ -151,7 +151,7 @@ def add_grid_text_watermarks_6x6(frame, text='Hello World, From JDB', font_scale
 
 
 def add_chinese_watermarks(frame, text='好物推荐',
-                           font_path='/Users/zhonghao/data/github_fonts/Android-ttf-download/字体/隶书.ttf', font_size=20):
+                           font_path='font/xqnt.ttf', font_size=20):
     """
     在频域上给单帧视频按6x6网格添加中文文字水印。
     :param frame: 单帧视频（灰度图像）。

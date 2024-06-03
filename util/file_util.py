@@ -53,6 +53,7 @@ def get_mp4_files(folder_path):
                 mp4_files.append({"path": path, "file_name": file})
     return mp4_files
 
+
 def get_json_files(folder_path):
     mp4_files = []
     for root, dirs, files in os.walk(folder_path):
@@ -61,6 +62,7 @@ def get_json_files(folder_path):
                 path = os.path.join(root, file)
                 mp4_files.append({"path": path, "file_name": file})
     return mp4_files
+
 
 def get_img_files(folder_path):
     audio_files = []
@@ -73,6 +75,15 @@ def get_img_files(folder_path):
                     or file.endswith(".bmp")):
                 audio_files.append(os.path.join(root, file))
     return audio_files
+
+
+def get_font_files(folder_path):
+    font_files = []
+    for root, dirs, files in os.walk(folder_path):
+        for file in files:
+            if file.endswith(".ttf") or file.endswith(".otf"):
+                font_files.append(os.path.join(root, file))
+    return font_files
 
 
 def get_audio_files(folder_path):
