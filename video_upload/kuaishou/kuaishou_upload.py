@@ -192,5 +192,5 @@ if __name__ == '__main__':
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
-    scheduler.add_job(app.main(), 'cron', hour=23, minute=0)
+    scheduler.add_job(app.main(), 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
     scheduler.start()

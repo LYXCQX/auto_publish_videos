@@ -36,7 +36,7 @@ def scheduled_job():
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
                 for video_good in video_goods:
-                    video_good['sales_script'] = random.choice(config.bottom_sales)+ video_good['sales_script']
+                    video_good['sales_script'] = f"{random.choice(config.bottom_sales)}， {get_sales_script(video_good)}，{random.choice(config.tail_sales)}"
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == video_good['type']:
@@ -59,6 +59,32 @@ def scheduled_job():
     except Exception as e:
         loguru.logger.error(f"生成要发布的视频失败: {e}")
 
+def get_sales_script(video_good):
+    sales_scripts = [video_good['sales_script'],
+                     f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
+                     f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
+                     f"{video_good['brand']}{video_good['goods_title']}只要{convert_amount(video_good['sales_volume'])}，{random.choice(config.center_sales)}"]
+    return random.choice(sales_scripts)
+
+def convert_amount(amount):
+    int_part = int(amount)  # 获取整数部分
+
+    if int_part < 10:
+        return f"{int_part}块多"
+    else:
+        str_amount = str(int_part)
+        length = len(str_amount)
+
+        # 找到最高位的数字
+        high_digit = str_amount[0]
+
+        # 找到后面的位数
+        remainder = "0" * (length - 1)
+
+        # 构造模糊表示
+        fuzzy_amount = high_digit + remainder + "多"
+
+        return fuzzy_amount
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Scheduler")
