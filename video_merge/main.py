@@ -26,7 +26,7 @@ vertical_rotation: Rotation = Rotation.CLOCKWISE
 # if __name__ == '__main__':
 def merge_video(config: Config, good: VideoGoods):
     start_time: float = time.time()
-    video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand']}")
+    video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand_base']}")
     video_info_list: List[VideoInfo] = get_video_info(video_path_list, config.max_sec)
     loguru.logger.info(f'视频拼接:获取视频信息完成,共计{len(video_info_list)}个视频:{video_info_list}')
 

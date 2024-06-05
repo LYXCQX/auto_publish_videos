@@ -29,7 +29,7 @@ config = read_dedup_config()
 def call_main_script():
     try:
         db = getdb()
-        brands = db.fetchall('select distinct(brand) from video_goods where state = 1')
+        brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
         for brand in brands:
             platform = 'xhs'
             lt = 'qrcode'

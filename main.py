@@ -41,7 +41,7 @@ def scheduled_job():
         for user_info in user_infos:
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
-                video_goods_publish = db.fetchall(f'select brand from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
+                video_goods_publish = db.fetchall(f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
                 for video_good in video_goods:
                     video_good['goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
                     video_good['sales_script'] = get_sales_scripts(video_good)
@@ -49,7 +49,7 @@ def scheduled_job():
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == video_good['type']:
                         if (len(video_goods_publish) < user_info['pub_num']
-                                and video_good['brand'] not in [obj['brand'] for obj in video_goods_publish]):
+                                and video_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]):
                             try:
                                 video_path = process_dedup_by_config(config, video_good)
                                 db.execute(
@@ -66,15 +66,19 @@ def scheduled_job():
 
 
 def get_goods_des(video_good):
-    goods_des = [video_good['goods_des'],
-                 f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
+    goods_des = [f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
                  f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
                  f"{video_good['brand']}{video_good['goods_title']}只要{convert_amount(video_good['sales_volume'])}，{random.choice(config.center_sales)}"]
+    if video_good['goods_des'] != '':
+        goods_des.append(video_good['goods_des'])
     return random.choice(goods_des)
 
 
 def get_sales_scripts(video_good):
-    return f"{video_good['brand']}{video_good['goods_title']}，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])}"
+    sales_script = [f"{video_good['brand']}{video_good['goods_title']}，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])}"]
+    if video_good['sales_script'] != '':
+        sales_script.append(video_good['sales_script'])
+    return random.choice(sales_script)
 
 
 def convert_amount(amount):
