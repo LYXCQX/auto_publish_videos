@@ -45,8 +45,8 @@ else
 fi
 
 # 检查并运行 kuaishou_upload.py
-if ! pgrep -f kuaishou_upload.py > /dev/null; then
-  python3 kuaishou_upload.py &
+if ! pgrep -f video_upload/kuaishou/kuaishou_upload.py > /dev/null; then
+  python3 video_upload/kuaishou/kuaishou_upload.py &
   KUAISHOU_UPLOAD_PID=$!
 else
   echo "kuaishou_upload.py is already running"
