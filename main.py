@@ -35,16 +35,15 @@ def scheduled_job():
         for user_info in user_infos:
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
+                video_goods_publish = db.fetchall(f'select brand from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
                 for video_good in video_goods:
-                    video_good['sales_script'] = f"{random.choice(config.bottom_sales)}， {get_sales_script(video_good)}，{random.choice(config.tail_sales)}"
+                    video_good['goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
+                    video_good['sales_script'] = get_sales_scripts(video_good)
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == video_good['type']:
-                        video_goods_publish = db.fetchall(
-                            f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
-                        if len(video_goods_publish) < user_info['pub_num'] and video_good['id'] not in [obj['vg_id'] for
-                                                                                                        obj in
-                                                                                                        video_goods_publish]:
+                        if (len(video_goods_publish) < user_info['pub_num']
+                                and video_good['brand'] not in [obj['brand'] for obj in video_goods_publish]):
                             try:
                                 video_path = process_dedup_by_config(config, video_good)
                                 db.execute(
@@ -59,12 +58,18 @@ def scheduled_job():
     except Exception as e:
         loguru.logger.error(f"生成要发布的视频失败: {e}")
 
-def get_sales_script(video_good):
-    sales_scripts = [video_good['sales_script'],
-                     f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
-                     f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
-                     f"{video_good['brand']}{video_good['goods_title']}只要{convert_amount(video_good['sales_volume'])}，{random.choice(config.center_sales)}"]
-    return random.choice(sales_scripts)
+
+def get_goods_des(video_good):
+    goods_des = [video_good['goods_des'],
+                 f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
+                 f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
+                 f"{video_good['brand']}{video_good['goods_title']}只要{convert_amount(video_good['sales_volume'])}，{random.choice(config.center_sales)}"]
+    return random.choice(goods_des)
+
+
+def get_sales_scripts(video_good):
+    return f"{video_good['brand']}{video_good['goods_title']}，原价{video_good['goods_price']},仅需{convert_amount(video_good['sales_volume'])}"
+
 
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分
@@ -85,6 +90,7 @@ def convert_amount(amount):
         fuzzy_amount = high_digit + remainder + "多"
 
         return fuzzy_amount
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Scheduler")
