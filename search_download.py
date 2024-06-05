@@ -2,19 +2,18 @@ import argparse
 import asyncio
 import json
 import os
-import string
 import sys
 import time
 from datetime import datetime
 
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
-from filelock import FileLock
 
 from MediaCrawler.tools import utils
 from util.db.sql_utils import getdb
 from util.file_util import download_video
 from video_dedup.config_parser import read_dedup_config
+
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 loguru.logger.add("info.log", format="{time} {level} {message}", level="INFO")
 # 获取当前脚本文件的目录
@@ -26,13 +25,7 @@ sys.path.append(media_crawler_path)
 from MediaCrawler.main import run_crawler_with_args
 
 config = read_dedup_config()
-lock = FileLock("/opt/software/auto_publish_videos/job.lock")
-def lock_download():
-    try:
-        with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
-            call_main_script()
-    except Exception as e:
-        loguru.logger.error(f"分割文件失败: {e}")
+
 def call_main_script():
     try:
         db = getdb()
@@ -44,7 +37,7 @@ def call_main_script():
             start = 1
             brand = brand['brand']
             keywords = brand + '视频素材'
-    
+
             asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
             json_store_path = f'data/{platform}'
             file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
@@ -75,8 +68,8 @@ if __name__ == "__main__":
     now = datetime.now()
     initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
-    scheduler.add_job(lock_download, 'cron', hour=23, minute=0, max_instances=1)
+    scheduler.add_job(call_main_script, 'cron', hour=23, minute=0, max_instances=1)
     if args.run_now:
-        lock_download()
+        call_main_script()
     scheduler.start()
     # call_main_script()

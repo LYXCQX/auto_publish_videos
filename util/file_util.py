@@ -2,6 +2,7 @@ import hashlib
 import os
 import tempfile
 import time
+from contextlib import contextmanager
 from pathlib import Path
 
 import loguru
@@ -170,3 +171,13 @@ def close_file_handle(file_path):
                         f"Terminated process {proc.info['name']} (PID: {proc.info['pid']}) which was using the file.")
         except (psutil.NoSuchProcess, psutil.AccessDenied):
             continue
+
+
+@contextmanager
+def acquire_lock(lock, timeout=0):
+    result = lock.acquire(timeout=timeout)
+    try:
+        yield result
+    finally:
+        if result:
+            lock.release()

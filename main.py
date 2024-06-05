@@ -7,6 +7,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock
 
 from util.db.sql_utils import getdb
+from util.file_util import acquire_lock
 from video_dedup.config_parser import read_dedup_config
 from video_dedup.video_dedup_by_config import process_dedup_by_config
 
@@ -18,10 +19,15 @@ lock = FileLock("/opt/software/auto_publish_videos/job.lock")
 
 def lock_create_video():
     try:
-        with lock.acquire(timeout=0):  # 尝试获取锁，超时设置为0，立即失败
-            scheduled_job()
+        loguru.logger.debug("尝试获取锁来生成视频")
+        with acquire_lock(lock, timeout=5) as acquired:
+            if acquired:
+                loguru.logger.debug("成功获取锁，开始生成视频")
+                scheduled_job()
+            else:
+                loguru.logger.warning("获取锁失败，生成视频操作被跳过")
     except Exception as e:
-        loguru.logger.error(f"生成视频失败: {e}")
+        loguru.logger.error(f"生成视频失败：{e}")
 
 
 def scheduled_job():
