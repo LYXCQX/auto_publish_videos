@@ -8,6 +8,7 @@ from pathlib import Path
 import loguru
 import psutil
 import requests
+from flask import request
 
 from common.conf import BASE_DIR
 
@@ -181,3 +182,7 @@ def acquire_lock(lock, timeout=0):
     finally:
         if result:
             lock.release()
+
+
+def get_upload_login_path(platform):
+    return f'/opt/img/upload/{platform}_{request.remote_addr}_login.png'

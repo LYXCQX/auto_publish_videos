@@ -1,17 +1,20 @@
 # -*- coding: utf-8 -*-
+import base64
 import json
 import pathlib
 import random
 from datetime import datetime
+from io import BytesIO
 
 import loguru
+from PIL import Image
 from apscheduler.schedulers.blocking import BlockingScheduler
 from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
 
 from util.db.sql_utils import getdb
-from util.file_util import get_account_file
+from util.file_util import get_account_file, download_video, get_upload_login_path
 
 db = getdb()
 
@@ -56,12 +59,26 @@ async def kuaishou_cookie_gen(account_file):
         # Pause the page, and start recording manually.
         page = await context.new_page()
         await page.goto("https://cp.kuaishou.com/article/publish/video")
-        await page.locator('#login').click()
-        await page.locator('#platform-switch-qrcode').click()
-        img_url = await page.locator('#qrcode img').get_attribute('src')
-        await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=60000)
+        await page.locator('.login').click()
+        await page.locator('.platform-switch').click()
+        img_url = await page.locator('.qrcode img').get_attribute('src')
+        # 解码 base64 图片
+        img_data = base64.b64decode(img_url.replace('data:image/png;base64,', ''))
+        img = Image.open(BytesIO(img_data))
+        img.save(get_upload_login_path('kuaishou'))
+        await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=120000)
+        await page.goto('https://cp.kuaishou.com/profile')
+        user_id = await page.locator('.detail__userKwaiId').text_content()
+        user_id = user_id.replace(" 用户 ID：", "").strip()
+
+        user_name = await page.locator('.detail__name').text_content()
         # 点击调试器的继续，保存cookie
-        await context.storage_state(path=account_file)
+        await context.storage_state(path=get_account_file(user_id))
+        try:
+            os.remove(get_upload_login_path('kuaishou'))
+        except:
+            loguru.logger.info(f"删除图片失败")
+        return user_id, user_name
 
 
 async def clickUpload(goods, page, css):
@@ -190,7 +207,8 @@ if __name__ == '__main__':
     # asyncio.run(app.main(), debug=False)
     scheduler = BlockingScheduler()
     now = datetime.now()
-    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10, microsecond=0)
+    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second + 10,
+                                                    microsecond=0)
     # 使用 cron 规则指定每天23点执行一次
     scheduler.add_job(app.main(), 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
     scheduler.start()

@@ -97,7 +97,7 @@
         const interval = setInterval(async () => {
             if (Date.now() - startTime > 120000) { // 120000 ms = 2 minutes
                 clearInterval(interval); // Stop polling after 2 minutes
-                console.error('Polling timed out after 2 minutes');
+                console.error('轮询超时 2 分钟');
                 return;
             }
 

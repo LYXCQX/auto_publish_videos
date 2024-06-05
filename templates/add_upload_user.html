@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>多平台登录</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+            width: 400px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.5s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-50px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        select, button, input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+            border-radius: 4px;
+        }
+
+        select, input {
+            background-color: #fff;
+            border: 1px solid #ccc;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #result {
+            margin-top: 20px;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+        }
+
+        #phoneFields {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>多平台登录</h1>
+    <select id="platformSelect">
+        <option value="kuaishou">快手</option>
+        <option value="xiaohongshu">小红书</option>
+        <option value="douyin">抖音</option>
+        <option value="wechat">视频号</option>
+    </select>
+    <select id="loginTypeSelect">
+        <option value="qr">二维码登录</option>
+        <option value="phone">手机号登录</option>
+    </select>
+    <div id="phoneFields">
+        <input type="text" id="phoneNumber" placeholder="请输入手机号">
+        <input type="text" id="verificationCode" placeholder="请输入验证码">
+    </div>
+    <button id="startButton">开始登录</button>
+    <div id="result"></div>
+</div>
+
+<script>
+    document.getElementById('loginTypeSelect').addEventListener('change', function() {
+        const loginType = this.value;
+        const phoneFields = document.getElementById('phoneFields');
+        if (loginType === 'phone') {
+            phoneFields.style.display = 'block';
+        } else {
+            phoneFields.style.display = 'none';
+        }
+    });
+    let interval;
+    async function startLogin() {
+        try {
+            const platform = document.getElementById('platformSelect').value;
+            const loginType = document.getElementById('loginTypeSelect').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const verificationCode = document.getElementById('verificationCode').value;
+
+            if (loginType === 'phone' && (!phoneNumber || !verificationCode)) {
+                alert('请输入手机号和验证码');
+                return;
+            }
+
+            pollForImage(platform, loginType);
+
+            const response = await fetch(`/auto_video/add_upload_user?platform=${platform}&loginType=${loginType}&phoneNumber=${phoneNumber}&verificationCode=${verificationCode}`);
+            const data = await response.json();
+            if (data.success) {
+                clearInterval(interval); // 停止轮询
+                document.getElementById('result').innerHTML = '登录成功';
+            }else{
+                alert(data.message)
+            }
+        } catch (error) {
+            console.error('发生错误:', error);
+        }
+    }
+
+    function pollForImage(platform, loginType) {
+        const startTime = Date.now();
+        const interval = setInterval(async () => {
+            if (Date.now() - startTime > 120000) { // 120000 ms = 2 分钟
+                clearInterval(interval); // 2 分钟后停止轮询
+                console.error('轮询超时 2 分钟');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/auto_video/get_qr_image?platform=${platform}&loginType=${loginType}`);
+                const data = await response.json();
+                if (data.success && data.imageUrl) {
+                    console.log(JSON.stringify(data))
+                    const image = document.createElement('img');
+                    image.src = data.imageUrl;
+                    document.getElementById('result').innerHTML = '';
+                    document.getElementById('result').appendChild(image);
+                } else if (data.msg === '登录成功') {
+                    console.log(JSON.stringify(data.msg))
+                    clearInterval(interval); // 停止轮询
+                    document.getElementById('result').innerHTML = data.msg;
+                }
+            } catch (error) {
+                console.error('发生错误:', error);
+            }
+        }, 5000); // 每 5 秒轮询一次
+    }
+
+    document.getElementById('startButton').addEventListener('click', startLogin);
+</script>
+</body>
+</html>

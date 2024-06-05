@@ -130,7 +130,7 @@ def start_async_task(task):
     asyncio.create_task(task)
 
 
-@app.route('/')
+@app.route('/download')
 def index():
     return render_template('add_user.html')
 
