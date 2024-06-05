@@ -4,10 +4,12 @@ import json
 import os
 import sys
 import time
+from _imp import acquire_lock
 from datetime import datetime
 
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
+from filelock import FileLock
 
 from MediaCrawler.tools import utils
 from util.db.sql_utils import getdb
@@ -25,6 +27,21 @@ sys.path.append(media_crawler_path)
 from MediaCrawler.main import run_crawler_with_args
 
 config = read_dedup_config()
+lock = FileLock("/opt/software/auto_publish_videos/job.lock")
+
+
+def download_lock():
+    try:
+        loguru.logger.debug("尝试获取锁分割文件")
+        with acquire_lock(lock, timeout=5) as acquired:
+            if acquired:
+                loguru.logger.debug("成功获取锁，开始分割文件")
+                call_main_script(config.need_split_path, config.video_path)
+            else:
+                loguru.logger.warning("获取锁失败，分割文件操作被跳过")
+    except Exception as e:
+        loguru.logger.error(f"分割文件失败：{e}")
+
 
 def call_main_script():
     try:

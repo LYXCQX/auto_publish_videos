@@ -1,10 +1,10 @@
 import argparse
+from _imp import acquire_lock
 from datetime import datetime
 
 import loguru
 from filelock import FileLock
 
-from util.file_util import acquire_lock
 
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 from apscheduler.schedulers.blocking import BlockingScheduler

@@ -1,5 +1,6 @@
 import argparse
 import random
+from _imp import acquire_lock
 from datetime import datetime
 
 import loguru
@@ -7,7 +8,6 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock
 
 from util.db.sql_utils import getdb
-from util.file_util import acquire_lock
 from video_dedup.config_parser import read_dedup_config
 from video_dedup.video_dedup_by_config import process_dedup_by_config
 
