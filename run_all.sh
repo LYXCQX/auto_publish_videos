@@ -43,12 +43,28 @@ if ! pgrep -f main.py > /dev/null; then
 else
   echo "main.py is already running"
 fi
-# 检查并运行 main.py
-if ! pgrep -f add_user.py > /dev/null; then
-  python3 add_user.py &
-  ADD_USER_PID=$!
+
+# 检查并运行 kuaishou_upload.py
+if ! pgrep -f kuaishou_upload.py > /dev/null; then
+  python3 kuaishou_upload.py &
+  KUAISHOU_UPLOAD_PID=$!
 else
-  echo "add_user.py is already running"
+  echo "kuaishou_upload.py is already running"
+fi
+# 检查并运行 add_user.py
+#if ! pgrep -f add_user.py > /dev/null; then
+#  python3 add_user.py &
+#  ADD_USER_PID=$!
+#else
+#  echo "add_user.py is already running"
+#fi
+
+# 检查并运行 add_upload_user.py
+if ! pgrep -f add_upload_user.py > /dev/null; then
+  python3 add_upload_user.py &
+  ADD_UPLOAD_USER_PID=$!
+else
+  echo "add_upload_user.py is already running"
 fi
 
 # 等待所有后台进程完成
@@ -64,8 +80,15 @@ if [ -n "$MAIN_PID" ]; then
   wait $MAIN_PID
 fi
 
-if [ -n "$ADD_USER_PIDD" ]; then
-  wait $ADD_USER_PID
+if [ -n "$KUAISHOU_UPLOAD_PID" ]; then
+  wait $KUAISHOU_UPLOAD_PID
 fi
 
+#if [ -n "$ADD_USER_PIDD" ]; then
+#  wait $ADD_USER_PID
+#fi
+
+if [ -n "$ADD_UPLOAD_USER_PID" ]; then
+  wait $ADD_UPLOAD_USER_PID
+fi
 echo "All scripts have finished executing."
