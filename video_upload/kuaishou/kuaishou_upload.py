@@ -71,9 +71,7 @@ async def kuaishou_cookie_gen(account_file):
         await page.goto('https://cp.kuaishou.com/profile')
         await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
         await asyncio.sleep(0.5)
-        user_id = await page.locator('.detail__userKwaiId').text_content()
-        user_id = user_id.replace(" 用户 ID：", "").strip()
-
+        user_id = await get_user_id(page)
         user_name = await page.locator('.detail__name').text_content()
         # 将截图保存到指定路径
         await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
@@ -85,6 +83,21 @@ async def kuaishou_cookie_gen(account_file):
         except:
             loguru.logger.info(f"删除图片失败")
         return user_id, user_name
+
+
+async def get_user_id(page):
+    start_time = time.time()  # 获取开始时间
+    while True:
+        user_id = await page.locator('.detail__userKwaiId').text_content()
+        user_id = user_id.replace(" 用户 ID：", "").strip()
+        if user_id == 0:
+            current_time = time.time()  # 获取当前时间
+            elapsed_time = current_time - start_time  # 计算已经过去的时间
+            if elapsed_time > 5:  # 如果已经过去的时间超过5秒
+                break  # 退出循环
+        else:
+            break  # 退出循环
+    return user_id
 
 
 async def clickUpload(goods, page, css):
