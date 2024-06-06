@@ -3,6 +3,7 @@ import base64
 import json
 import pathlib
 import random
+import time
 import uuid
 from datetime import datetime
 from io import BytesIO
@@ -68,7 +69,7 @@ async def kuaishou_cookie_gen(account_file):
         img.save(get_upload_login_path('kuaishou'))
         await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=120000)
         await page.goto('https://cp.kuaishou.com/profile')
-        await page.wait_for_load_state('load')
+        await page.wait_for_url('https://cp.kuaishou.com/profile', timeout=6000)
         user_id = await page.locator('.detail__userKwaiId').text_content()
         user_id = user_id.replace(" 用户 ID：", "").strip()
 
