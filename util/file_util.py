@@ -21,7 +21,7 @@ def download_video(url, output_filename):
         # 发送HTTP HEAD请求来获取视频文件大小
         response = requests.get(url, stream=True, timeout=(10, 300))
         response.raise_for_status()
-        max_size_mb = 500
+        max_size_mb = 300
         # 从响应头中获取内容长度（文件大小）
         file_size = int(response.headers.get('Content-Length', 0))
         max_size_bytes = max_size_mb * 1024 * 1024
