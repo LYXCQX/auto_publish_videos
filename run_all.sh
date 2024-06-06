@@ -51,13 +51,13 @@ if ! pgrep -f upload.py > /dev/null; then
 else
   echo "kuaishou_upload.py is already running"
 fi
-# 检查并运行 add_user.py
-#if ! pgrep -f add_user.py > /dev/null; then
-#  python3 add_user.py &
-#  ADD_USER_PID=$!
-#else
-#  echo "add_user.py is already running"
-#fi
+ 检查并运行 add_user.py
+if ! pgrep -f add_user.py > /dev/null; then
+  python3 add_user.py &
+  ADD_USER_PID=$!
+else
+  echo "add_user.py is already running"
+fi
 
 # 检查并运行 add_upload_user.py
 if ! pgrep -f add_upload_user.py > /dev/null; then
@@ -84,9 +84,9 @@ if [ -n "$UPLOAD_PID" ]; then
   wait $UPLOAD_PID
 fi
 
-#if [ -n "$ADD_USER_PIDD" ]; then
-#  wait $ADD_USER_PID
-#fi
+if [ -n "$ADD_USER_PIDD" ]; then
+  wait $ADD_USER_PID
+fi
 
 if [ -n "$ADD_UPLOAD_USER_PID" ]; then
   wait $ADD_UPLOAD_USER_PID
