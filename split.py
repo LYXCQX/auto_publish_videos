@@ -3,8 +3,7 @@ from _imp import acquire_lock
 from datetime import datetime
 
 import loguru
-from filelock import FileLock
-
+from filelock import FileLock, Timeout
 
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 from apscheduler.schedulers.blocking import BlockingScheduler
@@ -19,12 +18,11 @@ lock = FileLock("/opt/software/auto_publish_videos/job.lock")
 def split_job():
     try:
         loguru.logger.debug("尝试获取锁分割文件")
-        with acquire_lock(lock, timeout=5) as acquired:
-            if acquired:
-                loguru.logger.debug("成功获取锁，开始分割文件")
-                split_video(config.need_split_path, config.video_path)
-            else:
-                loguru.logger.warning("获取锁失败，分割文件操作被跳过")
+        with lock.acquire(timeout=5):
+            loguru.logger.debug("成功获取锁，开始分割文件")
+            split_video(config.need_split_path, config.video_path)
+    except Timeout:
+        loguru.logger.warning("获取锁失败，分割文件操作被跳过")
     except Exception as e:
         loguru.logger.error(f"分割文件失败：{e}")
 
