@@ -74,9 +74,8 @@ async def kuaishou_cookie_gen(account_file):
         user_id = user_id.replace(" 用户 ID：", "").strip()
 
         user_name = await page.locator('.detail__name').text_content()
-        screenshot = pyautogui.screenshot()
         # 将截图保存到指定路径
-        screenshot.save(f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
+        await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
         print(user_id, user_name)
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=get_account_file(user_id))
