@@ -50,7 +50,7 @@ async def kuaishou_setup(account_file, handle=False):
 async def kuaishou_cookie_gen(account_file):
     async with async_playwright() as playwright:
         options = {
-            'headless': False
+            'headless': True
         }
         # Make sure to run headed.
         browser = await playwright.chromium.launch(**options)
@@ -113,9 +113,9 @@ class KuaiShouVideo(object):
     async def upload(self, playwright: Playwright, goods, user_info, account_file, local_executable_path) -> None:
         # 使用 Chromium 浏览器启动一个浏览器实例
         if local_executable_path:
-            browser = await playwright.chromium.launch(headless=False, executable_path=local_executable_path)
+            browser = await playwright.chromium.launch(headless=True, executable_path=local_executable_path)
         else:
-            browser = await playwright.chromium.launch(headless=False)
+            browser = await playwright.chromium.launch(headless=True)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
         context = await browser.new_context(storage_state=f"{account_file}")
 
