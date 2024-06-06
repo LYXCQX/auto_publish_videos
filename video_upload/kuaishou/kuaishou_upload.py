@@ -196,7 +196,7 @@ class KuaiShouVideo(object):
                     user_info = user_infos[0]
                     if datetime.now().hour in json.loads(user_info['publish_hours']):
                         account_file = get_account_file(user_info['user_id'])
-                        asyncio.run(kuaishou_setup(account_file, handle=True))
+                        await kuaishou_setup(account_file, handle=True)
                         await self.upload(playwright, good, user_info, account_file, '')
                 except Exception as e:
                     loguru.logger.info(e)
