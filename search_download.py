@@ -36,7 +36,7 @@ def download_lock():
         with acquire_lock(lock, timeout=5) as acquired:
             if acquired:
                 loguru.logger.debug("成功获取锁，开始分割文件")
-                call_main_script(config.need_split_path, config.video_path)
+                call_main_script()
             else:
                 loguru.logger.warning("获取锁失败，分割文件操作被跳过")
     except Exception as e:
