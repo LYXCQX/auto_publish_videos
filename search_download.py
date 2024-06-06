@@ -34,14 +34,14 @@ def download_lock():
         loguru.logger.debug("尝试获取锁下载文件")
         with lock.acquire(timeout=5):
             loguru.logger.debug("成功获取锁，开始下载文件")
-            call_main_script()
+            start_download()
     except Timeout:
         loguru.logger.warning("获取锁失败，下载文件操作被跳过")
     except Exception as e:
         loguru.logger.error(f"下载文件失败：{e}")
 
 
-def call_main_script():
+def start_download():
     try:
         db = getdb()
         brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
@@ -50,7 +50,7 @@ def call_main_script():
             lt = 'qrcode'
             type = 'search'
             start = 1
-            brand = brand['brand']
+            brand = brand['brand_base']
             keywords = brand + '视频素材'
 
             asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
