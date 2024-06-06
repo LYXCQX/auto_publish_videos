@@ -69,12 +69,9 @@ async def kuaishou_cookie_gen(account_file):
         img.save(get_upload_login_path('kuaishou'))
         await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=120000)
         await page.goto('https://cp.kuaishou.com/profile')
-        await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
         await asyncio.sleep(0.5)
         user_id = await get_user_id(page)
         user_name = await page.locator('.detail__name').text_content()
-        # 将截图保存到指定路径
-        await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
         loguru.logger.info(user_id, user_name)
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=get_account_file(user_id))
