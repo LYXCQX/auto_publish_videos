@@ -69,7 +69,8 @@ async def kuaishou_cookie_gen(account_file):
         img.save(get_upload_login_path('kuaishou'))
         await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=120000)
         await page.goto('https://cp.kuaishou.com/profile')
-        await page.wait_for_url('https://cp.kuaishou.com/profile', timeout=6000)
+        await page.screenshot(path=f'/opt/software/auto_publish_videos/imgs/{uuid.uuid4()}.png')
+        await asyncio.sleep(0.5)
         user_id = await page.locator('.detail__userKwaiId').text_content()
         user_id = user_id.replace(" 用户 ID：", "").strip()
 
