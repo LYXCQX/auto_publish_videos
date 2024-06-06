@@ -99,7 +99,6 @@ async def add_user_login(crawler) -> str:
                 'status': True,
                 'expiry': time.time() + EXPIRATION_TIME
             }
-            return login_obj.login_par
         else:
             loguru.logger.info("xhs  cookie 有效，不需要再次获取")
 
@@ -166,10 +165,9 @@ async def user_login(platform, lt):
         keyword='',
         start_page=1
     )
-    img = await add_user_login(crawler)
+    await add_user_login(crawler)
     if config.SAVE_DATA_OPTION == "db":
         await db.close()
-    return img
 
 
 if __name__ == '__main__':
