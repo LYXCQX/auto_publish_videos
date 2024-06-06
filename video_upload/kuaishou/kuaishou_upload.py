@@ -6,9 +6,7 @@ import random
 import uuid
 from datetime import datetime
 from io import BytesIO
-
 import loguru
-import pyautogui
 from PIL import Image
 from apscheduler.schedulers.blocking import BlockingScheduler
 from playwright.async_api import Playwright, async_playwright
