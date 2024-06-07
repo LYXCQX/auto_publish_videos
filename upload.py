@@ -17,7 +17,7 @@ def upload_video():
 if __name__ == '__main__':
     scheduler = BlockingScheduler()
     parser = argparse.ArgumentParser(description="Script Scheduler")
-    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    parser.add_argument("--one", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
     if args.one:
         upload_video()

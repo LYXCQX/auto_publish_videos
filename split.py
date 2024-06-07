@@ -29,7 +29,7 @@ def split_job():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Scheduler")
-    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    parser.add_argument("--one", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
 
     if args.one:
