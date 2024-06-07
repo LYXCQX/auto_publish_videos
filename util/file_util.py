@@ -57,13 +57,13 @@ def get_mp4_files(folder_path):
 
 
 def get_json_files(folder_path):
-    mp4_files = []
+    json_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
             if file.endswith(".json"):
                 path = os.path.join(root, file)
-                mp4_files.append({"path": path, "file_name": file})
-    return mp4_files
+                json_files.append({"path": path, "file_name": file})
+    return json_files
 
 
 def get_img_files(folder_path):
@@ -109,6 +109,16 @@ def get_mp4_files_path(folder_path):
             if file.endswith(tuple(".mp4")):
                 path = os.path.join(root, file)
                 mp4_files.append(path)
+    return mp4_files
+
+
+def get_file_names(folder_path):
+    mp4_files = []
+    for path in folder_path:
+        for root, dirs, files in os.walk(path):
+            for file in files:
+                if file.endswith(".mp4"):
+                    mp4_files.append(file.split('_')[0])
     return mp4_files
 
 
