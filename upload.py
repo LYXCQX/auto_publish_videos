@@ -19,7 +19,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Scheduler")
     parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
-    if args.run_now:
+    if args.one:
         upload_video()
     else:
         now = datetime.now()

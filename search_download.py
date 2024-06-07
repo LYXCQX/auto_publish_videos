@@ -80,7 +80,7 @@ if __name__ == "__main__":
     parser.add_argument("--one", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
 
-    if args.run_now:
+    if args.one:
         download_lock()
     else:
         scheduler = BlockingScheduler()
