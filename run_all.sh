@@ -36,9 +36,9 @@ else
   echo "split.py is already running"
 fi
 
-# 检查并运行 main.py
-if ! pgrep -f main.py > /dev/null; then
-  python3 main.py &
+# 检查并运行 merge.py
+if ! pgrep -f merge.py > /dev/null; then
+  python3 merge.py &
   MAIN_PID=$!
 else
   echo "main.py is already running"

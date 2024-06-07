@@ -1,8 +1,10 @@
 import os
+import time
 
 import loguru
 from moviepy.editor import VideoFileClip
 
+from merge import scheduled_job
 from video_split.transnetv2 import TransNetV2
 from util.file_util import get_mp4_files_path, delete_file
 
@@ -11,16 +13,21 @@ def split_video(folder_path, source_path):
     model = TransNetV2()
     video_files = get_mp4_files_path(folder_path)
     loguru.logger.info(f"分割视频需要处理的数据有{len(video_files)}条")
+    last_time = time.time()
     for video_path in video_files:
-        split_video_one(video_path, folder_path, source_path,model)
+        split_video_one(video_path, folder_path, source_path, model)
+        # 每次运行完校验一下上次的运行时间，如果超过半个小时，则看一下有没有需要合并的数据
+        if last_time - time.time() > 1800:
+            scheduled_job()
+            last_time = time.time()
 
 
-def split_video_one(video_path, folder_path, source_path,model):
+def split_video_one(video_path, folder_path, source_path, model):
     try:
         video_name = os.path.basename(video_path)
         video_name_without_ext = os.path.splitext(video_name)[0]
         video_folder = os.path.dirname(video_path)
-        output_folder = os.path.join(source_path,video_folder.replace(folder_path,''))
+        output_folder = os.path.join(source_path, video_folder.replace(folder_path, ''))
         if not os.path.exists(output_folder):
             os.makedirs(output_folder)
 

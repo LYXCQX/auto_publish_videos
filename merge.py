@@ -114,6 +114,7 @@ if __name__ == '__main__':
     else:
         scheduler = BlockingScheduler()
         now = datetime.now()
-        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
+        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second,
+                                                        microsecond=0)
         scheduler.add_job(lock_create_video, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
         scheduler.start()
