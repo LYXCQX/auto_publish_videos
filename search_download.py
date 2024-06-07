@@ -12,7 +12,7 @@ from filelock import FileLock, Timeout
 
 from MediaCrawler.tools import utils
 from util.db.sql_utils import getdb
-from util.file_util import download_video
+from util.file_util import download_video, get_file_names
 from video_dedup.config_parser import read_dedup_config
 
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
@@ -58,16 +58,18 @@ def start_download():
             file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
             file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
             videos = json.load(open(file_patch, encoding='utf-8'))
+            file_name = get_file_names([config.need_split_path, config.video_path])
             for video in videos:
                 try:
-                    down_path = f"{config.need_split_path}{brand}"
-                    if not os.path.exists(down_path):
-                        os.makedirs(down_path)
-                    video_path = f"{down_path}/{video['note_id']}.mp4"
-                    if not os.path.exists(video_path):
-                        if video['video_url_none_sy'] != '':
-                            download_video(video['video_url_none_sy'], video_path)
-                            time.sleep(1)
+                    if video['note_id'] not in file_name:
+                        down_path = f"{config.need_split_path}{brand}"
+                        if not os.path.exists(down_path):
+                            os.makedirs(down_path)
+                        video_path = f"{down_path}/{video['note_id']}.mp4"
+                        if not os.path.exists(video_path):
+                            if video['video_url_none_sy'] != '':
+                                download_video(video['video_url_none_sy'], video_path)
+                                time.sleep(1)
                 except Exception as e:
                     loguru.logger.error(f"下载视频时发生错误: {e}")
             os.remove(file_patch)
@@ -85,7 +87,8 @@ if __name__ == "__main__":
     else:
         scheduler = BlockingScheduler()
         now = datetime.now()
-        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
+        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second,
+                                                        microsecond=0)
         # 使用 cron 规则指定每天23点执行一次
         scheduler.add_job(download_lock, 'cron', hour=23, minute=0, max_instances=1)
         scheduler.start()
