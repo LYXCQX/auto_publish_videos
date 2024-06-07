@@ -77,14 +77,15 @@ def start_download():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Script Scheduler")
-    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    parser.add_argument("--one", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
-    scheduler = BlockingScheduler()
-    now = datetime.now()
-    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
-    # 使用 cron 规则指定每天23点执行一次
-    scheduler.add_job(download_lock, 'cron', hour=23, minute=0, max_instances=1)
+
     if args.run_now:
         download_lock()
-    scheduler.start()
-    # download_lock()
+    else:
+        scheduler = BlockingScheduler()
+        now = datetime.now()
+        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
+        # 使用 cron 规则指定每天23点执行一次
+        scheduler.add_job(download_lock, 'cron', hour=23, minute=0, max_instances=1)
+        scheduler.start()

@@ -107,12 +107,13 @@ def convert_amount(amount):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Script Scheduler")
-    parser.add_argument("--run-now", action="store_true", help="Run the script immediately")
+    parser.add_argument("--one", action="store_true", help="Run the script immediately")
     args = parser.parse_args()
-    scheduler = BlockingScheduler()
-    now = datetime.now()
-    initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
-    scheduler.add_job(lock_create_video, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
-    if args.run_now:
+    if args.one:
         lock_create_video()
-    scheduler.start()
+    else:
+        scheduler = BlockingScheduler()
+        now = datetime.now()
+        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
+        scheduler.add_job(lock_create_video, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
+        scheduler.start()
