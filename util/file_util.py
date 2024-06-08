@@ -118,7 +118,7 @@ def get_file_names(folder_path):
         for root, dirs, files in os.walk(path):
             for file in files:
                 if file.endswith(".mp4"):
-                    mp4_files.append(file.split('_')[0])
+                    mp4_files.append(file.split('-')[0])
     return mp4_files
 
 

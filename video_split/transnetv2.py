@@ -18,16 +18,16 @@ class TransNetV2:
             model_dir = os.path.join(os.path.dirname(__file__), "transnetv2-weights/")
             # model_dir = "./transnetv2-weights/"
             if not os.path.isdir(model_dir):
-                raise FileNotFoundError(f"[TransNetV2] ERROR: {model_dir} is not a directory.")
+                raise FileNotFoundError(f"[TransNetV2] ERROR: {model_dir} 不是目录.")
             else:
-                loguru.logger.info(f"[TransNetV2] Using weights from {model_dir}.")
+                loguru.logger.info(f"[TransNetV2] 使用权重 {model_dir}.")
 
         self._input_size = (27, 48, 3)
         try:
             self._model = tf.saved_model.load(model_dir)
         except OSError as exc:
-            raise IOError(f"[TransNetV2] It seems that files in {model_dir} are corrupted or missing. "
-                          f"Re-download them manually and retry. For more info, see: "
+            raise IOError(f"[TransNetV2]{model_dir}中的文件似乎已损坏或丢失. "
+                          f"手动重新下载它们，然后重试。有关更多信息，请参阅 。: "
                           f"https://github.com/soCzech/TransNetV2/issues/1#issuecomment-647357796") from exc
 
     def predict_raw(self, frames: np.ndarray):
