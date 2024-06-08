@@ -1,6 +1,5 @@
 import argparse
 import random
-from _imp import acquire_lock
 from datetime import datetime
 
 import loguru

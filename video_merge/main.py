@@ -133,7 +133,7 @@ def merge_video(config: Config, good: VideoGoods):
 
 
 if __name__ == '__main__':
-    sourcePath = "D:/IDEA/workspace/auto_publish_videos//video/source//aa.py"
+    sourcePath = "D:/IDEA/workspace/auto_publish_videos//video/source//"
     # output_file_path = "D:/IDEA/workspace/\auto_publish_videos\\video\source\\1.mp4"
     fps = 30
     # best_width = 1280

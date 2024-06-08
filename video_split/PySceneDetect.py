@@ -17,4 +17,4 @@ def split_video_into_scenes(video_path, output_path, threshold=27.0):
 
 if __name__ == '__main__':
     split_video_into_scenes('/video/download/aa/66616a8a00000000060045f5.mp4',
-                            'D:\IDEA\workspace\\auto_publish_videos\\video\source\\11')
+                            'D:/IDEA/workspace/auto_publish_videos/video/source/11')
