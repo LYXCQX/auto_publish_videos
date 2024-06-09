@@ -48,6 +48,8 @@ def get_file_path(filename):
     sub_path = directory.replace(directory.split('/')[0], '')
     if sub_path.startswith('/'):
         sub_path = sub_path[1:]
+    loguru.logger.info(BASE_DIRS[directory.split('/')[0]])
+    loguru.logger.info(sub_path)
     file_path = os.path.join(BASE_DIRS[directory.split('/')[0]], sub_path)
     return file_path, filename
 
