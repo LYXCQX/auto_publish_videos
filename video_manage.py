@@ -6,8 +6,8 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 app = Flask(__name__)
 
 BASE_DIRS = {
-    'Directory 1': 'D:/IDEA/workspace/auto_publish_videos/video',
-    'Directory 2': 'D:/system/Desktop/fsdownload',
+    '视频': '/opt/software/auto_publish_videos/video/',
+    '登录图片': '/opt/img/',
 }
 
 
