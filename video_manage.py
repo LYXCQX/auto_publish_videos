@@ -1,9 +1,7 @@
 # server.py
 import os
 
-import loguru
 from flask import Flask, jsonify, request, send_from_directory, render_template
-loguru.logger.add("info.log", format="{time} {level} {message}", level="INFO")
 app = Flask(__name__)
 
 BASE_DIRS = {
@@ -39,7 +37,6 @@ def get_files():
 @app.route('/media/<path:filename>', methods=['GET'])
 def serve_media(filename):
     file_path, filename = get_file_path(filename)
-    loguru.logger.info(file_path)
     return send_from_directory(file_path, filename)
 
 
@@ -48,8 +45,6 @@ def get_file_path(filename):
     sub_path = directory.replace(directory.split('/')[0], '')
     if sub_path.startswith('/'):
         sub_path = sub_path[1:]
-    loguru.logger.info(BASE_DIRS[directory.split('/')[0]])
-    loguru.logger.info(sub_path)
     file_path = os.path.join(BASE_DIRS[directory.split('/')[0]], sub_path)
     return file_path, filename
 
