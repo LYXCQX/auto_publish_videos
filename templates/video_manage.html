@@ -166,7 +166,7 @@
                     let mediaElement;
                     if (file.endsWith('.mp4') || file.endsWith('.avi')) {
                         mediaElement = document.createElement('video');
-                        mediaElement.dataset.src = `video/media/${parentPath}/${file}`;
+                        mediaElement.dataset.src = `/video/media/${parentPath}/${file}`;
                         mediaElement.controls = true;
                         mediaElement.addEventListener('click', loadMedia);
                     } else if (file.endsWith('.mp3')||
@@ -176,12 +176,12 @@
                         file.endsWith('.ogg')
                     ) {
                         mediaElement = document.createElement('audio');
-                        mediaElement.dataset.src = `video/media/${parentPath}/${file}`;
+                        mediaElement.dataset.src = `/video/media/${parentPath}/${file}`;
                         mediaElement.controls = true;
                         mediaElement.addEventListener('click', loadMedia);
                     } else {
                         mediaElement = document.createElement('img');
-                        mediaElement.src = `video/media/${parentPath}/${file}`;
+                        mediaElement.src = `/video/media/${parentPath}/${file}`;
                         mediaElement.alt = file;
                     }
 
