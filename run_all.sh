@@ -67,6 +67,14 @@ else
   echo "add_upload_user.py is already running"
 fi
 
+# 检查并运行 video_manage.py
+if ! pgrep -f video_manage.py > /dev/null; then
+  python3 video_manage.py &
+  VIDEO_MANAGE_PID=$!
+else
+  echo "video_manage.py is already running"
+fi
+
 # 等待所有后台进程完成
 if [ -n "$SEARCH_DOWNLOAD_PID" ]; then
   wait $SEARCH_DOWNLOAD_PID
@@ -91,4 +99,9 @@ fi
 if [ -n "$ADD_UPLOAD_USER_PID" ]; then
   wait $ADD_UPLOAD_USER_PID
 fi
+
+if [ -n "$VIDEO_MANAGE_PID" ]; then
+  wait $VIDEO_MANAGE_PID
+fi
+
 echo "All scripts have finished executing."
