@@ -1,6 +1,7 @@
 # server.py
 import os
 
+import loguru
 from flask import Flask, jsonify, request, send_from_directory, render_template
 
 app = Flask(__name__)
@@ -38,6 +39,7 @@ def get_files():
 @app.route('/media/<path:filename>', methods=['GET'])
 def serve_media(filename):
     file_path, filename = get_file_path(filename)
+    loguru.logger.info(file_path)
     return send_from_directory(file_path, filename)
 
 
