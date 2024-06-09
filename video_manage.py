@@ -39,7 +39,7 @@ def get_files():
 @app.route('/media/<path:filename>', methods=['GET'])
 def serve_media(filename):
     file_path, filename = get_file_path(filename)
-    loguru.logger.info(file_path)
+    print(file_path)
     return send_from_directory(file_path, filename)
 
 
@@ -48,8 +48,8 @@ def get_file_path(filename):
     sub_path = directory.replace(directory.split('/')[0], '')
     if sub_path.startswith('/'):
         sub_path = sub_path[1:]
-    loguru.logger.info(BASE_DIRS[directory.split('/')[0]])
-    loguru.logger.info(sub_path)
+    print(BASE_DIRS[directory.split('/')[0]])
+    print(sub_path)
     file_path = os.path.join(BASE_DIRS[directory.split('/')[0]], sub_path)
     return file_path, filename
 
