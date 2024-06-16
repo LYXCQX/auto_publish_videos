@@ -2,7 +2,8 @@
 
 # 确保脚本遇到错误时立即停止
 set -e
-
+# 手动设置 Conda 环境变量路径
+export PATH="/root/miniconda3/bin:$PATH"
 # 初始化 Conda
 conda init bash
 
