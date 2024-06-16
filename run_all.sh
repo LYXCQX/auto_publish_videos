@@ -3,23 +3,23 @@
 # 确保脚本遇到错误时立即停止
 set -e
 cd /opt/software/auto_publish_videos
+sleep 60
 # 定义虚拟环境路径
 VENV_PATH="vens"
 
 # 检查 conda 是否可用
-#if ! command -v conda &> /dev/null; then
-#  echo "conda could not be found"
-#  exit 1
-#fi
-#
-## 检查虚拟环境是否存在
-#if conda info --envs | grep -q "$VENV_NAME"; then
-#  echo "Conda environment '$VENV_NAME' exists."
-#else
-#  echo "Creating conda environment '$VENV_NAME'."
-#  conda create -n $VENV_NAME python=3.8 -y
-#fi
-conda create -n $VENV_NAME python=3.8 -y
+if ! command -v conda &> /dev/null; then
+  echo "conda could not be found"
+  exit 1
+fi
+
+# 检查虚拟环境是否存在
+if conda info --envs | grep -q "$VENV_NAME"; then
+  echo "Conda environment '$VENV_NAME' exists."
+else
+  echo "Creating conda environment '$VENV_NAME'."
+  conda create -n $VENV_NAME python=3.8 -y
+fi
 # 激活虚拟环境
 conda activate $VENV_PATH
 
