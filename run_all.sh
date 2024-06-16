@@ -2,25 +2,24 @@
 
 # 确保脚本遇到错误时立即停止
 set -e
+
+# 初始化 Conda
+conda init bash
+
 cd /opt/software/auto_publish_videos
-sleep 300
 # 定义虚拟环境路径
 VENV_PATH="vens"
 
-# 检查 conda 是否可用
-if ! command -v conda &> /dev/null; then
-  echo "conda could not be found"
-  exit 1
+# 检查虚拟环境是否存在
+if conda info --envs | grep -q "$VENV_PATH"; then
+  echo "Conda environment '$VENV_PATH' exists."
+else
+  echo "Creating conda environment '$VENV_PATH'."
+  conda create -n $VENV_PATH python=3.8 -y
 fi
 
-# 检查虚拟环境是否存在
-if conda info --envs | grep -q "$VENV_NAME"; then
-  echo "Conda environment '$VENV_NAME' exists."
-else
-  echo "Creating conda environment '$VENV_NAME'."
-  conda create -n $VENV_NAME python=3.8 -y
-fi
 # 激活虚拟环境
+eval "$(conda shell.bash hook)"
 conda activate $VENV_PATH
 
 # 安装依赖
@@ -68,6 +67,7 @@ if ! pgrep -f upload.py > /dev/null; then
 else
   echo "kuaishou_upload.py is already running"
 fi
+
 # 检查并运行 add_user.py
 if ! pgrep -f add_user.py > /dev/null; then
   python3 add_user.py &
@@ -113,7 +113,7 @@ if [ -n "$UPLOAD_PID" ]; then
   wait $UPLOAD_PID
 fi
 
-if [ -n "$ADD_USER_PIDD" ]; then
+if [ -n "$ADD_USER_PID" ]; then
   wait $ADD_USER_PID
 fi
 
