@@ -3,7 +3,7 @@
 # 确保脚本遇到错误时立即停止
 set -e
 cd /opt/software/auto_publish_videos
-sleep 60
+sleep 300
 # 定义虚拟环境路径
 VENV_PATH="vens"
 
