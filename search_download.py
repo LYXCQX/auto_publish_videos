@@ -58,11 +58,11 @@ def start_download():
             file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
             file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
             videos = json.load(open(file_patch, encoding='utf-8'))
-            file_name = get_file_names([config.need_split_path, config.video_path])
+            file_name = get_file_names([config.sub_remove_path, config.video_path])
             for video in videos:
                 try:
                     if video['note_id'] not in file_name:
-                        down_path = f"{config.need_split_path}{brand}"
+                        down_path = f"{config.sub_remove_path}{brand}"
                         if not os.path.exists(down_path):
                             os.makedirs(down_path)
                         video_path = f"{down_path}/{video['note_id']}.mp4"

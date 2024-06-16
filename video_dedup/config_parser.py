@@ -61,6 +61,7 @@ class Config:
         self.max_sec = 10
         self.fps = 30
         self.need_split_path = ''
+        self.sub_remove_path = ''
         self.video_temp = ''
         self.role = ''
         self.rate = ''
@@ -153,5 +154,6 @@ def read_dedup_config():
     config.Shadow = parser.get('dedup_step', 'Shadow')
 
     config.need_split_path = parser.get('video_split', 'need_split_path')
+    config.sub_remove_path = parser.get('video_split', 'sub_remove_path')
 
     return config

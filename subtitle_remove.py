@@ -1,30 +1,30 @@
 import argparse
-from _imp import acquire_lock
 from datetime import datetime
 
 import loguru
 from filelock import FileLock, Timeout
 
+from util.sub_title_util import process_video
+
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 from apscheduler.schedulers.blocking import BlockingScheduler
 
 from video_dedup.config_parser import read_dedup_config
-from video_split.main import split_video
 
 config = read_dedup_config()
 lock = FileLock("/opt/software/auto_publish_videos/job.lock")
 
 
-def split_job():
+def subtitle_remove():
     try:
-        loguru.logger.debug("尝试获取锁分割文件")
+        loguru.logger.debug("尝试获取锁字幕移除")
         with lock.acquire(timeout=5):
-            loguru.logger.debug("成功获取锁，开始分割文件")
-            split_video(config.need_split_path, config.video_path)
+            loguru.logger.debug("成功获取锁，开始字幕移除")
+            process_video(config.sub_remove_path, config.need_split_path, 'patchmatch')
     except Timeout:
-        loguru.logger.warning("获取锁失败，分割文件操作被跳过")
+        loguru.logger.warning("获取锁失败，字幕移除操作被跳过")
     except Exception as e:
-        loguru.logger.error(f"分割文件失败：{e}")
+        loguru.logger.error(f"字幕移除失败：{e}")
 
 
 if __name__ == '__main__':
@@ -33,11 +33,12 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.one:
-        split_job()
+        subtitle_remove()
     else:
         scheduler = BlockingScheduler()
         now = datetime.now()
-        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second, microsecond=0)
-        scheduler.add_job(split_job, 'interval', minutes=30, max_instances=1)  # 每30分钟执行一次
+        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second,
+                                                        microsecond=0)
+        scheduler.add_job(subtitle_remove, 'interval', minutes=25, max_instances=1)  # 每30分钟执行一次
         scheduler.start()
     # split_job()

@@ -28,6 +28,14 @@ else
   echo "search_download.py is already running"
 fi
 
+# 检查并运行 subtitle_remove.py
+if ! pgrep -f subtitle_remove.py > /dev/null; then
+  python3 subtitle_remove.py &
+  SUBTITLE_REMOVE_PID=$!
+else
+  echo "subtitle_remove.py is already running"
+fi
+
 # 检查并运行 split.py
 if ! pgrep -f split.py > /dev/null; then
   python3 split.py &
@@ -78,6 +86,10 @@ fi
 # 等待所有后台进程完成
 if [ -n "$SEARCH_DOWNLOAD_PID" ]; then
   wait $SEARCH_DOWNLOAD_PID
+fi
+
+if [ -n "$SUBTITLE_REMOVE_PID" ]; then
+  wait $SUBTITLE_REMOVE_PID
 fi
 
 if [ -n "$SPLIT_PID" ]; then

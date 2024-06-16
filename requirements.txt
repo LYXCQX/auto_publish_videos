@@ -1,6 +1,6 @@
 APScheduler
 ffmpeg_python
-numpy
+numpy==1.19.3
 playwright
 pydub
 Requests
@@ -25,4 +25,6 @@ scenedetect
 python-dotenv
 Pillow
 filelock
-
+openai-whisper
+paddleocr
+paddlepaddle
