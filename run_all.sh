@@ -4,15 +4,23 @@
 set -e
 cd /opt/software/auto_publish_videos
 # 定义虚拟环境路径
-VENV_PATH="venv"
+VENV_PATH="vens"
 
-# 创建虚拟环境（如果不存在）
-if [ ! -d "$VENV_PATH" ]; then
-  python3 -m venv $VENV_PATH
+# 检查 conda 是否可用
+if ! command -v conda &> /dev/null; then
+  echo "conda could not be found"
+  exit 1
 fi
 
+# 检查虚拟环境是否存在
+if conda info --envs | grep -q "$VENV_NAME"; then
+  echo "Conda environment '$VENV_NAME' exists."
+else
+  echo "Creating conda environment '$VENV_NAME'."
+  conda create -n $VENV_NAME python=3.8 -y
+fi
 # 激活虚拟环境
-. $VENV_PATH/bin/activate
+conda activate $VENV_PATH
 
 # 安装依赖
 pip install -r requirements.txt
