@@ -5,7 +5,7 @@ import subprocess
 import cv2
 import numpy as np
 from paddleocr import PaddleOCR
-
+import whisper
 # os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
@@ -171,7 +171,6 @@ def process_video(input_video_path, output_video_path, model):
     """处理视频"""
     if has_audio(input_video_path):
         print("视频有音频。使用 Whisper 检测最长的字幕段落。")
-        import whisper
         def get_longest_segment(audio_path):
             model = whisper.load_model("base")
             result = model.transcribe(audio_path)
