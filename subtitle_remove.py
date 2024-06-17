@@ -37,7 +37,7 @@ def subtitle_remove_one(folder_path, source_path):
         try:
             video_folder = os.path.dirname(video_path)
             output_folder = os.path.join(source_path, video_folder.replace(folder_path, ''),os.path.basename(video_path))
-            loguru.logger.info(f'字幕移除正在处理的文件为{video_path}')
+            loguru.logger.info(f'字幕移除正在处理的文件为{video_path},将会输出到{output_folder}')
             process_video(video_path, output_folder, 'patchmatch')
         except Exception as e:
             loguru.logger.info(f"字幕移除失败 {video_path}: {e}")
