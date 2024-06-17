@@ -9,7 +9,7 @@ conda init bash
 
 cd /opt/software/auto_publish_videos
 # 定义虚拟环境路径
-VENV_PATH="vens"
+VENV_PATH="ven3.10"
 
 # 检查虚拟环境是否存在
 if conda info --envs | grep -q "$VENV_PATH"; then
