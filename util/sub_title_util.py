@@ -175,6 +175,7 @@ def process_video(input_video_path, output_video_path, model):
     """处理视频"""
     if has_audio(input_video_path):
         print("视频有音频。使用 Whisper 检测最长的字幕段落。")
+
         def get_longest_segment(audio_path):
             model = whisper.load_model("base")
             result = model.transcribe(audio_path)
@@ -184,7 +185,8 @@ def process_video(input_video_path, output_video_path, model):
             return longest_segment
 
         longest_segment = get_longest_segment(input_video_path)
-        frame, ocr_result = get_ocr_result(input_video_path, longest_segment['start'])
+        segment_start_time = random.uniform(longest_segment['start'], longest_segment['end'])
+        frame, ocr_result = get_ocr_result(input_video_path, max(0, segment_start_time - 0.05))
     else:
         print("视频没有音频。随机选择帧以检测字幕。")
         for _ in range(10):
