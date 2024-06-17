@@ -33,18 +33,13 @@ def subtitle_remove():
 def subtitle_remove_one(folder_path, source_path):
     video_files = get_mp4_files_path(folder_path)
     loguru.logger.info(f"字幕移除需要处理的数据有{len(video_files)}条")
-    last_time = time.time()
     for video_path in video_files:
         try:
             video_folder = os.path.dirname(video_path)
             output_folder = os.path.join(source_path, video_folder.replace(folder_path, ''))
             loguru.logger.info(f'字幕移除正在处理的文件为{video_path}')
             process_video(video_path, output_folder, 'patchmatch')
-            # 每次运行完校验一下上次的运行时间，如果超过半个小时，则看一下有没有需要合并的数据
-            if last_time - time.time() > 1800:
-                # scheduled_job()
-                last_time = time.time()
-        except:
+        except Exception as e:
             loguru.logger.info(f"字幕移除失败 {video_path}: {e}")
         finally:
             if os.path.exists(video_path):
@@ -68,4 +63,3 @@ if __name__ == '__main__':
                                                         microsecond=0)
         scheduler.add_job(subtitle_remove, 'interval', minutes=25, max_instances=1)  # 每30分钟执行一次
         scheduler.start()
-    # split_job()

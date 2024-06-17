@@ -1,6 +1,5 @@
 APScheduler
 ffmpeg_python
-numpy==1.19.3
 playwright
 pydub
 Requests
