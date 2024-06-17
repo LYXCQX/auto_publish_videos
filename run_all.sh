@@ -16,7 +16,7 @@ if conda info --envs | grep -q "$VENV_PATH"; then
   echo "Conda environment '$VENV_PATH' exists."
 else
   echo "Creating conda environment '$VENV_PATH'."
-  conda create -n $VENV_PATH python=3.8 -y
+  conda create -n $VENV_PATH python=3.10 -y
 fi
 
 # 激活虚拟环境
