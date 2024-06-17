@@ -6,8 +6,7 @@ import cv2
 import numpy as np
 from paddleocr import PaddleOCR
 
-
-os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 def has_audio(video_path):
@@ -216,7 +215,7 @@ def process_video(input_video_path, output_video_path, model):
 
 
 if __name__ == '__main__':
-    input_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/5.mp4'
-    output_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/6.mp4'
+    input_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/9.mp4'
+    output_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/10.mp4'
 
     process_video(input_video_path, output_video_path, 'patchmatch')
