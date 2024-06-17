@@ -7,7 +7,7 @@ import numpy as np
 from paddleocr import PaddleOCR
 
 
-# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 def has_audio(video_path):
