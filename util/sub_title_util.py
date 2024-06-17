@@ -4,6 +4,7 @@ import shutil
 import subprocess
 
 import cv2
+import loguru
 import numpy as np
 from paddleocr import PaddleOCR
 import whisper
@@ -174,6 +175,7 @@ def fill_subtitles(frame, ocr_result, model):
 def process_video(input_video_path, output_video_path, model):
     # 确保目标文件夹存在，如果不存在则创建它
     os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
+    loguru.logger.info(f"视频输出路径{os.path.dirname(output_video_path)}")
     """处理视频"""
     if has_audio(input_video_path):
         print("视频有音频。使用 Whisper 检测最长的字幕段落。")

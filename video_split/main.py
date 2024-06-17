@@ -3,6 +3,7 @@ import time
 
 import loguru
 
+from merge import scheduled_job
 # from merge import scheduled_job
 from util.file_util import get_mp4_files_path
 from video_split.PySceneDetect import split_video_into_scenes
@@ -20,7 +21,7 @@ def split_video(folder_path, source_path):
             split_video_into_scenes(video_path, output_folder)
             # 每次运行完校验一下上次的运行时间，如果超过半个小时，则看一下有没有需要合并的数据
             if last_time - time.time() > 1800:
-                # scheduled_job()
+                scheduled_job()
                 last_time = time.time()
         except:
             loguru.logger.info(f"分割视频失败 {video_path}: {e}")
