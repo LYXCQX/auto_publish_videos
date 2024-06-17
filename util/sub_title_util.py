@@ -172,6 +172,8 @@ def fill_subtitles(frame, ocr_result, model):
 
 
 def process_video(input_video_path, output_video_path, model):
+    # 确保目标文件夹存在，如果不存在则创建它
+    os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
     """处理视频"""
     if has_audio(input_video_path):
         print("视频有音频。使用 Whisper 检测最长的字幕段落。")
@@ -196,8 +198,6 @@ def process_video(input_video_path, output_video_path, model):
 
     if not ocr_result:
         print("在采样的帧中未检测到字幕。直接移动文件")
-        # 确保目标文件夹存在，如果不存在则创建它
-        os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
         # 移动视频文件
         shutil.move(input_video_path, output_video_path)
         return
