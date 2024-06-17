@@ -1,12 +1,13 @@
 import os
-
-# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+import random
+import subprocess
 
 import cv2
 import numpy as np
-import random
 from paddleocr import PaddleOCR
-import subprocess
+
+
+# os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 
 
 def has_audio(video_path):
@@ -21,22 +22,23 @@ def get_ocr_result(video_path, segment_start_time=None):
     ocr = PaddleOCR(use_angle_cls=True, lang='ch')
     video_capture = cv2.VideoCapture(video_path)
 
-    if segment_start_time:
-        video_capture.set(cv2.CAP_PROP_POS_MSEC, segment_start_time * 1000)
-    else:
-        video_length = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-        for _ in range(10):
-            random_frame = random.randint(0, video_length - 1)
-            video_capture.set(cv2.CAP_PROP_POS_FRAMES, random_frame)
-            success, frame = video_capture.read()
-            if success:
-                ocr_result = ocr.ocr(frame)
-                if ocr_result:
-                    break
+    try:
+        if segment_start_time:
+            video_capture.set(cv2.CAP_PROP_POS_MSEC, segment_start_time * 1000)
         else:
-            ocr_result = []
-
-    video_capture.release()
+            video_length = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+            for _ in range(10):
+                random_frame = random.randint(0, video_length - 1)
+                video_capture.set(cv2.CAP_PROP_POS_FRAMES, random_frame)
+                success, frame = video_capture.read()
+                if success:
+                    ocr_result = ocr.ocr(frame)
+                    if ocr_result:
+                        break
+            else:
+                ocr_result = []
+    finally:
+        video_capture.release()
     return frame, ocr_result
 
 
@@ -156,7 +158,7 @@ def fill_subtitles(frame, ocr_result, model):
     if non_subtitle_ratio < 0.2:
         print("最大的无字幕区域小于20%，删除视频。")
         os.remove(input_video_path)
-        return frame
+        return
     elif non_subtitle_ratio < 0.3:
         return apply_blur_to_frame(frame, largest_non_subtitle_area)
     else:
@@ -197,20 +199,21 @@ def process_video(input_video_path, output_video_path, model):
 
     fourcc = cv2.VideoWriter_fourcc(*'mp4v')
     video_writer = cv2.VideoWriter(output_video_path, fourcc, fps, (width, height))
+    try:
+        frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
+        for i in range(1, frame_count):  # 跳过第一帧
+            success, frame = video_capture.read()
+            if not success:
+                break
 
-    frame_count = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
-    for i in range(1, frame_count):  # 跳过第一帧
-        success, frame = video_capture.read()
-        if not success:
-            break
-
-        frame = fill_subtitles(frame, ocr_result, model)
-        video_writer.write(frame)
-
-    video_capture.release()
-    video_writer.release()
+            frame = fill_subtitles(frame, ocr_result, model)
+            video_writer.write(frame)
+    finally:
+        video_capture.release()
+        video_writer.release()
 
     print("处理完成，输出视频路径：", output_video_path)
+
 
 if __name__ == '__main__':
     input_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/5.mp4'
