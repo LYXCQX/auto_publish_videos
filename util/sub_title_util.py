@@ -1,5 +1,6 @@
 import os
 import random
+import shutil
 import subprocess
 
 import cv2
@@ -20,10 +21,13 @@ def get_ocr_result(video_path, segment_start_time=None):
     """获取OCR结果，如果有音频则从最长字幕段落获取，否则随机选取10帧"""
     ocr = PaddleOCR(use_angle_cls=True, lang='ch')
     video_capture = cv2.VideoCapture(video_path)
-
+    ocr_result = []
     try:
         if segment_start_time:
             video_capture.set(cv2.CAP_PROP_POS_MSEC, segment_start_time * 1000)
+            success, frame = video_capture.read()
+            if success:
+                ocr_result = ocr.ocr(frame)
         else:
             video_length = int(video_capture.get(cv2.CAP_PROP_FRAME_COUNT))
             for _ in range(10):
@@ -38,7 +42,7 @@ def get_ocr_result(video_path, segment_start_time=None):
                 ocr_result = []
     finally:
         video_capture.release()
-    return frame, ocr_result
+    return frame if ocr_result else None, ocr_result
 
 
 def get_subtitle_areas(ocr_result, frame_height, padding):
@@ -174,6 +178,8 @@ def process_video(input_video_path, output_video_path, model):
         def get_longest_segment(audio_path):
             model = whisper.load_model("base")
             result = model.transcribe(audio_path)
+            if not result['segments']:
+                return None
             longest_segment = max(result['segments'], key=lambda x: x['end'] - x['start'])
             return longest_segment
 
@@ -187,7 +193,11 @@ def process_video(input_video_path, output_video_path, model):
                 break
 
     if not ocr_result:
-        print("在采样的帧中未检测到字幕。")
+        print("在采样的帧中未检测到字幕。直接移动文件")
+        # 确保目标文件夹存在，如果不存在则创建它
+        os.makedirs(os.path.dirname(output_video_path), exist_ok=True)
+        # 移动视频文件
+        shutil.move(input_video_path, output_video_path)
         return
 
     video_capture = cv2.VideoCapture(input_video_path)
