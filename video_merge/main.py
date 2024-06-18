@@ -23,11 +23,10 @@ horizontal_rotation: Rotation = Rotation.CLOCKWISE
 vertical_rotation: Rotation = Rotation.CLOCKWISE
 
 
-# if __name__ == '__main__':
 def merge_video(config: Config, good: VideoGoods):
     start_time: float = time.time()
     video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand_base']}")
-    if len(video_path_list) <1:
+    if len(video_path_list) < 1:
         loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
         return
     video_info_list: List[VideoInfo] = get_video_info(video_path_list, config.max_sec)
@@ -35,9 +34,13 @@ def merge_video(config: Config, good: VideoGoods):
 
     # 获取最佳分辨率
     loguru.logger.debug('视频拼接:正在获取最佳分辨率')
-    best_width, best_height = get_most_compatible_resolution(video_info_list)
-    best_width = best_width
-    best_height = best_height
+    if config.video_width > 0 and config.video_height > 0:
+        best_width = config.video_width
+        best_height = config.video_height
+    else:
+        best_width, best_height = get_most_compatible_resolution(video_info_list)
+
+
     loguru.logger.info(f'视频拼接:最佳分辨率为{best_width}x{best_height}')
     output_file_path = f"{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp4"
     # 开始对视频依次执行[剪裁],[旋转],[缩放],[帧同步],[拼接]操作

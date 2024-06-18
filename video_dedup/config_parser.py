@@ -63,6 +63,8 @@ class Config:
         self.need_split_path = ''
         self.sub_remove_path = ''
         self.video_temp = ''
+        self.video_width = ''
+        self.video_height = ''
         self.role = ''
         self.rate = ''
         self.volume = ''
@@ -91,6 +93,8 @@ def read_dedup_config():
     config.video_path = parser.get('video_path', 'video_path')
     config.external_dedup_video_path = parser.get('video_path', 'external_dedup_video_path')
     config.video_temp = parser.get('video_path', 'video_temp')
+    config.video_width = parser.get('video_path', 'video_width')
+    config.video_height = parser.get('video_path', 'video_height')
     config.remove_finish = parser.getboolean('finish_step', 'remove_finish')
     config.target_pub_user_id = parser.get('finish_step', 'target_pub_user_id')
     config.write_db = parser.getboolean('finish_step', 'write_db')

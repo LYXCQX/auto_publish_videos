@@ -159,11 +159,11 @@ def fill_subtitles(frame, ocr_result, model):
     largest_non_subtitle_area = max(non_subtitle_areas, key=lambda area: area[1] - area[0])
     non_subtitle_ratio = (largest_non_subtitle_area[1] - largest_non_subtitle_area[0]) / frame.shape[0]
 
-    if non_subtitle_ratio < 0.2:
+    if non_subtitle_ratio < 0.3:
         print("最大的无字幕区域小于20%，删除视频。")
         os.remove(input_video_path)
         return
-    elif non_subtitle_ratio < 0.3:
+    elif non_subtitle_ratio < 0.5:
         return apply_blur_to_frame(frame, largest_non_subtitle_area)
     else:
         if model == 'texture':
