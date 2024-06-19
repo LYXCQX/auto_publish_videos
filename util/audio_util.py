@@ -100,15 +100,26 @@ def gen_srt(text, srt_path):
 
     # 逐句进行再判断，如果大于15个字符则再进行分割。
     captions = []
-    delimiter_set = {'。', '#', '?', '？', '$', ':', '：'}
-    for sen in sentences:
-        if len(sen) > 15:
-            sub_sen = re.split(r'[{char_set}]'.format(char_set=delimiter_set), sen)
-            for i in sub_sen:
-                captions.append(i)
+    # delimiter_set = {'。', '#', '?', '？', '$', ':', '：'}
+    # for sen in sentences:
+    #     if len(sen) > 10:
+    #         sub_sen = re.split(r'[{char_set}]'.format(char_set=delimiter_set), sen)
+    #         for i in sub_sen:
+    #             captions.append(i)
+    #     else:
+    #         captions.append(sen)
+    # 使用正则表达式按符号分割字符串
+    split_text = re.split(r'\W+(?<![-])', text)
+    # 移除空字符串
+    split_text = [s for s in split_text if s]
+    # 对于任何超过 max_length 的部分，进一步分割
+    max_length = 10
+    for part in split_text:
+        if len(part) > max_length:
+            # 进一步分割为每个不超过 max_length 的部分
+            captions.extend([part[i:i + max_length] for i in range(0, len(part), max_length)])
         else:
-            captions.append(sen)
-
+            captions.append(part)
     # 计算每个句子的持续时间
     end_time = 0
     srt = ''
@@ -128,9 +139,26 @@ def gen_srt(text, srt_path):
     loguru.logger.info(f'字幕srt文件已保存到{srt_path}')
 
 
+def split_text_len(text, max_length=10):
+    # 使用正则表达式按符号分割字符串
+    split_text = re.split(r'\W+(?<![-])', text)
+
+    # 移除空字符串
+    split_text = [s for s in split_text if s]
+
+    # 对于任何超过 max_length 的部分，进一步分割
+    final_split = []
+    for part in split_text:
+        if len(part) > max_length:
+            # 进一步分割为每个不超过 max_length 的部分
+            final_split.extend([part[i:i + max_length] for i in range(0, len(part), max_length)])
+        else:
+            final_split.append(part)
+
+    return final_split
+
+
 if __name__ == "__main__":
-    text = '''
-    在上面的代码中我们首先指定要打开的文本文件的路径然后，我们创建了一个简单的窗口布局，其中包含一个文本框元素用于显示文件内容。接下来，我们打开文本文件并读取其内容。
-    '''
+    text = '【龙虾到家-六斤龙虾】敞开吃(六斤小龙虾含配菜)，多种口味可选，蒜香，麻辣，原价328.04，仅需94，外卖到家，坐等开吃'
     srt_path = r'D:\IDEA\workspace\auto_publish_videos\video\srt\aa.srt'
-    gen_srt(text, srt_path)
+    print(split_text_len(text))

@@ -34,18 +34,16 @@ def merge_video(config: Config, good: VideoGoods):
 
     # 获取最佳分辨率
     loguru.logger.debug('视频拼接:正在获取最佳分辨率')
-    if config.video_width > 0 and config.video_height > 0:
-        best_width = config.video_width
-        best_height = config.video_height
-    else:
-        best_width, best_height = get_most_compatible_resolution(video_info_list)
-
+    # if int(config.video_width) > 0 and int(config.video_height) > 0:
+    #     best_width = config.video_width
+    #     best_height = config.video_height
+    # else:
+    best_width, best_height = get_most_compatible_resolution(video_info_list)
 
     loguru.logger.info(f'视频拼接:最佳分辨率为{best_width}x{best_height}')
     output_file_path = f"{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp4"
     # 开始对视频依次执行[剪裁],[旋转],[缩放],[帧同步],[拼接]操作
-    output_video = cv2.VideoWriter(output_file_path, cv2.VideoWriter.fourcc(*'mp4v'), int(config.fps),
-                                   (best_width, best_height))
+    output_video = cv2.VideoWriter(output_file_path, cv2.VideoWriter.fourcc(*'mp4v'), int(config.fps), (best_width, best_height))
     for video_info in video_info_list:
         video = cv2.VideoCapture(str(video_info.video_path))
         fps = int(video.get(cv2.CAP_PROP_FPS))

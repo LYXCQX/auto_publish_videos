@@ -45,34 +45,46 @@ def start_download():
     try:
         db = getdb()
         brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
-        for brand in brands:
-            platform = 'xhs'
-            lt = 'qrcode'
-            type = 'search'
-            start = 1
-            brand = brand['brand_base']
-            keywords = brand + '视频素材'
+        dowaloads_file = 'download.txt'
+        if os.path.exists(dowaloads_file) and os.path.getsize(dowaloads_file) > 0:
+            with open(dowaloads_file, 'r', encoding='utf-8') as file:
+                downloads_video = json.load(file)
+        else:
+            # 如果文件不存在或为空，初始化一个空列表
+            downloads_video = []
 
-            asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
-            json_store_path = f'data/{platform}'
-            file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
-            file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
-            videos = json.load(open(file_patch, encoding='utf-8'))
-            file_name = get_file_names([config.sub_remove_path, config.need_split_path, config.video_path])
-            for video in videos:
-                try:
-                    if video['note_id'] not in file_name:
-                        down_path = f"{config.sub_remove_path}{brand}"
-                        if not os.path.exists(down_path):
-                            os.makedirs(down_path)
-                        video_path = f"{down_path}/{video['note_id']}.mp4"
-                        if not os.path.exists(video_path):
-                            if video['video_url_none_sy'] != '':
-                                download_video(video['video_url_none_sy'], video_path)
-                                time.sleep(1)
-                except Exception as e:
-                    loguru.logger.error(f"下载视频时发生错误: {e}")
-            os.remove(file_patch)
+        for brand in brands:
+            try:
+                platform = 'xhs'
+                lt = 'qrcode'
+                type = 'search'
+                start = 1
+                brand = brand['brand_base']
+                keywords = brand + '视频素材'
+
+                asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
+                json_store_path = f'data/{platform}'
+                file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
+                file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
+                videos = json.load(open(file_patch, encoding='utf-8'))
+                file_name = get_file_names([config.sub_remove_path, config.need_split_path, config.video_path])
+                for video in videos:
+                    try:
+                        if video['note_id'] not in file_name and video['note_id'] not in downloads_video:
+                            down_path = f"{config.sub_remove_path}{brand}"
+                            if not os.path.exists(down_path):
+                                os.makedirs(down_path)
+                            video_path = f"{down_path}/{video['note_id']}.mp4"
+                            if not os.path.exists(video_path):
+                                if video['video_url_none_sy'] != '':
+                                    download_video(video['video_url_none_sy'], video_path)
+                                    downloads_video.append(video['note_id'])
+                    except Exception as e:
+                        loguru.logger.error(f"下载视频时发生错误: {e}")
+                os.remove(file_patch)
+            finally:
+                with open(dowaloads_file, 'w', encoding='utf-8') as file:
+                    json.dump(downloads_video, file, ensure_ascii=False, indent=4)
     except Exception as e:
         loguru.logger.error(f"下载视频时发生错误: {e}")
 
