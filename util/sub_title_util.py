@@ -53,11 +53,13 @@ def get_subtitle_areas(ocr_result, frame_height, padding):
         if line is not None:
             for word in line:
                 bbox = word[0]
-                _, y1 = map(int, bbox[0])
-                _, y2 = map(int, bbox[2])
-                y1 = max(0, y1 - padding)
-                y2 = min(frame_height, y2 + padding)
-                subtitle_areas.append((y1, y2))
+                sub_t = word[1]
+                if len(sub_t[0]) > 5:
+                    _, y1 = map(int, bbox[0])
+                    _, y2 = map(int, bbox[2])
+                    y1 = max(0, y1 - padding)
+                    y2 = min(frame_height, y2 + padding)
+                    subtitle_areas.append((y1, y2))
     subtitle_areas.sort()
     return subtitle_areas
 
@@ -100,9 +102,9 @@ def patch_match_inpainting(frame, ocr_result, mask, padding):
                 x2, y2 = int(bbox[2][0]), int(bbox[2][1])
 
                 # 扩展字幕区域并确保在边界内
-                x1 = np.clip(x1 - padding, 0, width)
+                x1 = 0
                 y1 = np.clip(y1 - padding, 0, height)
-                x2 = np.clip(x2 + padding, 0, width)
+                x2 = width - 10
                 y2 = np.clip(y2 + padding, 0, height)
 
                 mask[y1:y2, x1:x2] = 255
@@ -149,7 +151,7 @@ def is_non_subtitle_region(mask, x1, y1, x2, y2):
 def fill_subtitles(frame, ocr_result, model):
     """填充字幕区域"""
     mask = np.zeros(frame.shape[:2], dtype=np.uint8)
-    padding = 10
+    padding = 5
 
     subtitle_areas = get_subtitle_areas(ocr_result, frame.shape[0], padding)
     if not subtitle_areas:
@@ -164,6 +166,7 @@ def fill_subtitles(frame, ocr_result, model):
         os.remove(input_video_path)
         return
     elif non_subtitle_ratio < 0.5:
+        frame = patch_match_inpainting(frame, ocr_result, mask, padding)
         return apply_blur_to_frame(frame, largest_non_subtitle_area)
     else:
         if model == 'texture':
@@ -228,7 +231,7 @@ def process_video(input_video_path, output_video_path, model):
 
 
 if __name__ == '__main__':
-    input_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/9.mp4'
-    output_video_path = 'D:/IDEA/workspace/auto_publish_videos/video/download/aa/10.mp4'
+    input_video_path = 'D:\system\Desktop\sql/123.mp4'
+    output_video_path = 'D:\system\Desktop\sql/10.mp4'
 
     process_video(input_video_path, output_video_path, 'patchmatch')
