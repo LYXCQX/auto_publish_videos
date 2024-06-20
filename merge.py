@@ -34,7 +34,7 @@ def scheduled_job():
         # 查询需要发布的用户，用来提前生成视频
         user_infos = db.fetchall("select * from user_info")
         # 查询可以发布的商品
-        video_goods = db.fetchall("select * from video_goods")
+        video_goods = db.fetchall("select * from video_goods group by brand order by id desc ")
         # 循环并找出可以生成视频（未到发布条数） 还没生成视频的用户
         for user_info in user_infos:
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
@@ -52,8 +52,8 @@ def scheduled_job():
                             try:
                                 video_path = process_dedup_by_config(config, video_good)
                                 db.execute(
-                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`, `state`) "
-                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}',{1})")
+                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`, `state`) "
+                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}',{1})")
                             except Exception as e:
                                 loguru.logger.exception(
                                     f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
@@ -65,27 +65,51 @@ def scheduled_job():
 
 
 def get_goods_des(video_good):
+    goods_price = convert_amount(video_good['goods_price'])
+    real_price = convert_amount(video_good['real_price'])
     goods_des = [
-        f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动，原价{convert_amount(video_good['goods_price'])},仅需{convert_amount(video_good['sales_volume'])},{random.choice(config.center_sales)}",
+        f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},仅需{real_price},{random.choice(config.center_sales)}",
         f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
-        f"{video_good['brand']}{video_good['goods_title']}只要{convert_amount(video_good['sales_volume'])}，{random.choice(config.center_sales)}"]
-    if video_good['goods_des'] != '':
+        f"{video_good['brand']}{video_good['goods_title']}只要{real_price}，{random.choice(config.center_sales)}"]
+    if video_good['goods_des'] != '' and video_good['goods_des'] is not None:
         goods_des.append(video_good['goods_des'])
-    return random.choice(goods_des)
+    res = random.choice(goods_des)
+    print(f'視頻描述-{res}')
+    print(f'視頻描述-{goods_des}')
+    return res
 
 
 def get_sales_scripts(video_good):
+    goods_price = convert_amount(video_good['goods_price'])
+    real_price = convert_amount(video_good['real_price'])
     sales_script = [
-        f"{video_good['brand']}/n{video_good['goods_title']}，原价{video_good['goods_price']},/n仅需{convert_amount(video_good['sales_volume'])}"]
-    if video_good['sales_script'] != '':
+        f"{video_good['brand']}\n{wrap_text(video_good['goods_title'], 13)}\n{'' if goods_price == real_price else f'原价{goods_price}'}\n仅需{real_price}"]
+    if video_good['sales_script'] != '' and video_good['sales_script'] is not None:
         sales_script.append(video_good['sales_script'])
-    return random.choice(sales_script)
+    res = random.choice(sales_script).replace('\n\n', '\n').replace('\n \n', '\n')
+    print(f'視頻描述-{res}')
+    print(f'視頻描述-{sales_script}')
+    return res
+    # return random.choice(sales_script)
+
+
+def wrap_text(text, width):
+    """
+    将字符串按指定宽度换行
+    :param text: 输入字符串
+    :param width: 每行的字符数
+    :return: 处理后的字符串
+    """
+    wrapped_text = ''
+    for i in range(0, len(text), width):
+        wrapped_text += text[i:i + width] + '\n'
+    return wrapped_text
 
 
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分
 
-    if int_part < 10:
+    if int_part < 20:
         return f"{int_part}块多"
     else:
         str_amount = str(int_part)

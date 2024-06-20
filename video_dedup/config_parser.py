@@ -110,7 +110,7 @@ def read_dedup_config():
     config.contrast = parser.getfloat('dedup_step', 'contrast')
     config.crop_size = parser.getint('dedup_step', 'crop_size')
     config.watermark_text = parser.get('dedup_step', 'watermark_text')
-    config.font_path = random.choice(get_font_files(parser.get('dedup_step', 'font_path')))
+    config.font_path = get_font_files(parser.get('dedup_step', 'font_path'))
     config.watermark_type = parser.get('dedup_step', 'watermark_type')
     config.watermark_direction = parser.get('dedup_step', 'watermark_direction')
     config.watermark_image_path = get_img_files(parser.get('dedup_step', 'watermark_image_path'))

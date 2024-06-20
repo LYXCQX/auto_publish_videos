@@ -29,8 +29,8 @@ def get_video_audio(input_path):
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
     loguru.logger.info('---', video_stream, '---', audio_stream, '---', output_path)
-    stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
-                           crf=18, **{'b:v': str(target_bitrate) + 'k'}).global_args('-tag:v', 'hvc1')
+    stream = ffmpeg.output(video_stream, audio_stream, output_path,  vcodec='libx264', preset='medium',
+                           crf=18, **{'b:v': str(target_bitrate) + 'k'}).global_args('-tag:v', 'hvc1', '-shortest', '-y')
     loguru.logger.info(stream)
     ffmpeg.run(stream)
 
@@ -153,7 +153,7 @@ def add_watermark(input_stream, config: Config, watermark_content, watermark_typ
     if watermark_type == 'text':
         input_stream = input_stream.filter('drawtext', text=watermark_content, x=x_expr, y=y_expr, fontsize=26,
                                            fontcolor='yellow', borderw=1, bordercolor='red',
-                                           fontfile=config.font_path)
+                                           fontfile=get_font_file(config))
     elif watermark_type == 'image':
         input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, 10, 220)
         input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, 10, 650)
@@ -203,17 +203,18 @@ def add_blurred_background(input_stream, output_video_tmp, width, height, top_pe
 
 
 def add_title(input_stream, config, title, line_num=10, title_position='top', title_gap=5):
+    fontfile=get_font_file(config)
     if title:
         fontsize = config.top_title_size
         title_x = 'w/2-text_w/2'
         if title_position == 'top':
             title_y = f'h*{title_gap}/100'
-            input_stream = draw_text(config, fontsize, input_stream, title, title_x, title_y, 'orange')
+            input_stream = draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile,'orange')
         else:
             title_y = f'h-h*{title_gap}/100-text_h'
             fontsize = config.bottom_title_size
             for txt in title.split('\n'):
-                input_stream = draw_text(config, fontsize, input_stream, txt, title_x, title_y, 'white')
+                input_stream = draw_text(config, fontsize, input_stream, txt, title_x, title_y, fontfile,'white')
                 title_y += '+80'
                 loguru.logger.info(title_y)
 
@@ -229,10 +230,10 @@ def add_title(input_stream, config, title, line_num=10, title_position='top', ti
     return input_stream
 
 
-def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontcolor):
+def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile,fontcolor):
     input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
                                          shadowcolor='black', shadowx=4, shadowy=4,
-                                         fontfile=config.font_path,
+                                         fontfile=fontfile,
                                          borderw=1, bordercolor='black')
     return input_stream
 
@@ -340,12 +341,11 @@ def random_color():
 
 def add_subtitles(video_stream, subtitle_path, config: Config):
     font_color_code = color_mapping.get(config.srt_font_color.lower(), 'FFFFFF')  # 默认白色
-
+    font_file = get_font_file(config)
     # output = video_stream.filter('subtitles', filename=subtitle_path,
-    #                              force_style=f'FontName={config.font_path},FontSize={config.font_size},PrimaryColour=&H00{font_color_code},OutlineColour=&H00{config.border_color_code},BorderStyle=1,BorderW=5,BackColour=&H00000000')
-
+    #                              force_style=f'FontName={get_font_file(config)},FontSize={config.font_size},PrimaryColour=&H00{font_color_code},OutlineColour=&H00{config.border_color_code},BorderStyle=1,BorderW=5,BackColour=&H00000000')
     output = video_stream.filter('subtitles', filename=subtitle_path, charenc='UTF-8',
-                                 force_style=f'FontName={config.font_path},'
+                                 force_style=f'FontName={font_file},'
                                              f'FontSize={config.font_size},'
                                              f'PrimaryColour={random_color()},'
                                              f'BorderStyle={config.BorderStyle},'
@@ -358,3 +358,6 @@ def add_subtitles(video_stream, subtitle_path, config: Config):
                                              f'BackColour={random_color()}'
                                  )
     return output
+
+def get_font_file(config:Config):
+    return random.choice(config.font_path)

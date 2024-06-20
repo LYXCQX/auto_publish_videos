@@ -17,13 +17,13 @@ from video_merge.main import merge_video
 def process_dedup_by_config(config: Config, good: VideoGoods):
     time0 = time.time()
     audio_path_tmp = f'{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp3'
-    srt_path_tmp = ''
+    srt_path_tmp = get_temp_path('.srt')
     opencv_tmp = ''
     output_video_tmp = ''
     input_video = ''
     try:
         goods_des = good['goods_des']
-        create_audio(goods_des, audio_path_tmp, random.choice(config.role), config.rate, config.volume)
+        create_audio(goods_des, audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
         audio_stream = read_ffmpeg_audio_from_file(audio_path_tmp)
         merged_audio = AudioSegment.from_file(audio_path_tmp)
         config.max_sec = AudioSegment.from_file(audio_path_tmp).duration_seconds
@@ -77,10 +77,6 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
             # save_audio_stream(audio_stream, audio_path_tmp)
             # 依据音频调用模型得到结果
             # srt_result = whisper_model(audio_path_tmp)
-            # 生成srt文件
-            srt_path_tmp = get_temp_path('.srt')
-            gen_srt(goods_des, srt_path_tmp)
-            # todo 要对字体font颜色进行一下校验，防止拼写错误等问题
             video_stream = add_subtitles(video_stream, srt_path_tmp, config)
 
         # 初步持久化

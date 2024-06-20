@@ -34,11 +34,11 @@ def merge_video(config: Config, good: VideoGoods):
 
     # 获取最佳分辨率
     loguru.logger.debug('视频拼接:正在获取最佳分辨率')
-    # if int(config.video_width) > 0 and int(config.video_height) > 0:
-    #     best_width = config.video_width
-    #     best_height = config.video_height
-    # else:
-    best_width, best_height = get_most_compatible_resolution(video_info_list)
+    if int(config.video_width) > 0 and int(config.video_height) > 0:
+        best_width = int(config.video_width)
+        best_height = int(config.video_height)
+    else:
+        best_width, best_height = get_most_compatible_resolution(video_info_list)
 
     loguru.logger.info(f'视频拼接:最佳分辨率为{best_width}x{best_height}')
     output_file_path = f"{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp4"
