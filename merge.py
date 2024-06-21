@@ -7,6 +7,7 @@ import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock, Timeout
 
+from util.audio_util import wrap_text
 from util.db.sql_utils import getdb
 from video_dedup.config_parser import read_dedup_config
 from video_dedup.video_dedup_by_config import process_dedup_by_config
@@ -87,28 +88,6 @@ def get_sales_scripts(video_good):
     if video_good['sales_script'] != '' and video_good['sales_script'] is not None:
         sales_script.append(video_good['sales_script'])
     return random.choice(sales_script).replace('\n\n', '\n').replace('\n \n', '\n')
-
-
-def wrap_text(text, width):
-    """
-    将字符串按指定宽度换行，尽量保持字母和数字在一起
-    :param text: 输入字符串
-    :param width: 每行的字符数
-    :return: 处理后的字符串
-    """
-    wrapped_text = ''
-    # 使用正则表达式将文本分割为字母/数字组合和其他字符组合
-    parts = re.findall(r'[\da-zA-Z]+|[^a-zA-Z\d\s]', text)
-    current_line = ''
-    for part in parts:
-        if len(current_line) + len(part) <= width:
-            current_line += part
-        else:
-            wrapped_text += current_line.strip() + '\n'
-            current_line = part
-    if current_line:
-        wrapped_text += current_line.strip()
-    return wrapped_text
 
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分

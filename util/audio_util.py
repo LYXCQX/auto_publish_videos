@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from video_dedup.config_parser import Config
 
 
-def merge_and_adjust_volumes(origin_audio, bgm_audio, config:Config, volume_a=1.2, volume_b=0.3):
+def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1.2, volume_b=0.3):
     # 获取音频a的时长
     # probe = ffmpeg.probe(origin_audio_file)
     # duration_a = float(next(stream for stream in probe['streams'] if stream['codec_type'] == 'audio')['duration'])
@@ -22,7 +22,8 @@ def merge_and_adjust_volumes(origin_audio, bgm_audio, config:Config, volume_a=1.
 
     # 合并音频a和截取后的音频b
     merged_audio = ffmpeg.filter([origin_audio, audio_b_trimmed], 'amix', duration='longest')
-    ffmpeg.output(merged_audio,  f'D:\IDEA\workspace\\auto_publish_videos\\video\\temp\\123.mp3').run(overwrite_output=True)
+    ffmpeg.output(merged_audio, f'D:\IDEA\workspace\\auto_publish_videos\\video\\temp\\123.mp3').run(
+        overwrite_output=True)
     return merged_audio
 
 
@@ -105,16 +106,20 @@ class CustomSubMaker(edge_tts.SubMaker):
         data = ""
         j = 0
         for index, sub_text in enumerate(self.text_list):
+            sub_t = sub_text
+            if '\n' in sub_text:
+                sub_t = sub_text.replace('\n', '')
             try:
                 start_time = self.offset[j][0]
             except IndexError:
                 return data
             try:
-                while self.subs[j + 1] in sub_text:
+                while self.subs[j + 1] in sub_t:
                     j += 1
             except IndexError:
                 pass
-            data += f'{index}\r\n{edge_tts.submaker.formatter(start_time, self.offset[j][1], sub_text)}'
+            sub_mak = edge_tts.submaker.formatter(start_time, self.offset[j][1], sub_t)
+            data += f'{index}\r\n{sub_mak if sub_text == sub_t else sub_mak.replace(sub_t,sub_text)}'
             j += 1
         return data
 
@@ -131,11 +136,51 @@ def split_text_len(sub_text, max_length=12):
     for part in split_text:
         if len(part) > max_length:
             # 进一步分割为每个不超过 max_length 的部分
-            final_split.extend([part[i:i + max_length] for i in range(0, len(part), max_length)])
+            # final_split.append()
+            split_num(final_split, wrap_text(part, max_length))
+
         else:
             final_split.append(part)
 
     return final_split
+
+
+# 每两个\n分割一下
+def split_num(final_split, txt):
+    start = 0
+    newline_count = 0
+    for i, char in enumerate(txt):
+        if char == '\n':
+            newline_count += 1
+        if newline_count == 2:
+            final_split.append(txt[start:i])
+            start = i + 1
+            newline_count = 0
+    # 如果有任何剩余文本，请添加最后一段
+    if start < len(txt):
+        final_split.append(txt[start:])
+
+
+def wrap_text(text, width):
+    """
+    将字符串按指定宽度换行，尽量保持字母和数字在一起
+    :param text: 输入字符串
+    :param width: 每行的字符数
+    :return: 处理后的字符串
+    """
+    wrapped_text = ''
+    # 使用正则表达式将文本分割为字母/数字组合和其他字符组合
+    parts = re.findall(r'[\da-zA-Z]+|[^a-zA-Z\d\s]', text)
+    current_line = ''
+    for part in parts:
+        if len(current_line) + len(part) <= width:
+            current_line += part
+        else:
+            wrapped_text += current_line.strip() + '\n'
+            current_line = part
+    if current_line:
+        wrapped_text += current_line.strip()
+    return wrapped_text
 
 
 if __name__ == "__main__":
