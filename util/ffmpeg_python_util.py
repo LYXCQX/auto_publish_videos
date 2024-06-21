@@ -29,8 +29,8 @@ def get_video_audio(input_path):
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
     loguru.logger.info('---', video_stream, '---', audio_stream, '---', output_path)
-    stream = ffmpeg.output(video_stream, audio_stream, output_path,  vcodec='libx264', preset='medium',
-                           crf=18, **{'b:v': str(target_bitrate) + 'k'}).global_args('-tag:v', 'hvc1', '-shortest', '-y')
+    stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
+                           crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
     loguru.logger.info(stream)
     ffmpeg.run(stream)
 

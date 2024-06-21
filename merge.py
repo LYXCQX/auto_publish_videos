@@ -1,5 +1,6 @@
 import argparse
 import random
+import re
 from datetime import datetime
 
 import loguru
@@ -69,14 +70,13 @@ def get_goods_des(video_good):
     real_price = convert_amount(video_good['real_price'])
     goods_des = [
         f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},仅需{real_price},{random.choice(config.center_sales)}",
+        f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{random.choice(config.center_sales)}",
         f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
+        f"{video_good['brand']}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{random.choice(config.center_sales)}",
         f"{video_good['brand']}{video_good['goods_title']}只要{real_price}，{random.choice(config.center_sales)}"]
     if video_good['goods_des'] != '' and video_good['goods_des'] is not None:
         goods_des.append(video_good['goods_des'])
-    res = random.choice(goods_des)
-    print(f'視頻描述-{res}')
-    print(f'視頻描述-{goods_des}')
-    return res
+    return random.choice(goods_des)
 
 
 def get_sales_scripts(video_good):
@@ -86,25 +86,29 @@ def get_sales_scripts(video_good):
         f"{video_good['brand']}\n{wrap_text(video_good['goods_title'], 13)}\n{'' if goods_price == real_price else f'原价{goods_price}'}\n仅需{real_price}"]
     if video_good['sales_script'] != '' and video_good['sales_script'] is not None:
         sales_script.append(video_good['sales_script'])
-    res = random.choice(sales_script).replace('\n\n', '\n').replace('\n \n', '\n')
-    print(f'視頻描述-{res}')
-    print(f'視頻描述-{sales_script}')
-    return res
-    # return random.choice(sales_script)
+    return random.choice(sales_script).replace('\n\n', '\n').replace('\n \n', '\n')
 
 
 def wrap_text(text, width):
     """
-    将字符串按指定宽度换行
+    将字符串按指定宽度换行，尽量保持字母和数字在一起
     :param text: 输入字符串
     :param width: 每行的字符数
     :return: 处理后的字符串
     """
     wrapped_text = ''
-    for i in range(0, len(text), width):
-        wrapped_text += text[i:i + width] + '\n'
+    # 使用正则表达式将文本分割为字母/数字组合和其他字符组合
+    parts = re.findall(r'[\da-zA-Z]+|[^a-zA-Z\d\s]', text)
+    current_line = ''
+    for part in parts:
+        if len(current_line) + len(part) <= width:
+            current_line += part
+        else:
+            wrapped_text += current_line.strip() + '\n'
+            current_line = part
+    if current_line:
+        wrapped_text += current_line.strip()
     return wrapped_text
-
 
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分

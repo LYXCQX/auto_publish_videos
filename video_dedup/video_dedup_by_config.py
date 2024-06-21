@@ -26,7 +26,8 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
         create_audio(goods_des, audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
         audio_stream = read_ffmpeg_audio_from_file(audio_path_tmp)
         merged_audio = AudioSegment.from_file(audio_path_tmp)
-        config.max_sec = AudioSegment.from_file(audio_path_tmp).duration_seconds
+        audio_duration = AudioSegment.from_file(audio_path_tmp).duration_seconds
+        config.max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
         # 按照配置合并视频
         input_video = merge_video(config, good)
 
@@ -64,7 +65,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
         if config.bgm_audio_path != '':
             loguru.logger.info('config.bgm_audio_path -> ', config.bgm_audio_path)
             bgm_audio = read_ffmpeg_audio_from_file(random.choice(config.bgm_audio_path))
-            merged_audio = merge_and_adjust_volumes(audio_stream, bgm_audio, video_duration)
+            merged_audio = merge_and_adjust_volumes(audio_stream, bgm_audio, config)
 
         tt = time.time()
         loguru.logger.info('step1 cost time ', tt - time0)
