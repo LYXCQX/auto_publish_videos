@@ -23,7 +23,7 @@ def split_video(folder_path, source_path):
             if last_time - time.time() > 1800:
                 scheduled_job()
                 last_time = time.time()
-        except:
+        except Exception as e:
             loguru.logger.info(f"分割视频失败 {video_path}: {e}")
         finally:
             if os.path.exists(video_path):
