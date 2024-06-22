@@ -14,6 +14,8 @@ from playwright.async_api import Playwright, async_playwright
 import os
 import asyncio
 
+current_dir = os.path.dirname(os.path.abspath(__file__))
+libs_path = os.path.join(current_dir, '..', '..', 'MediaCrawler', 'libs', 'stealth.min.js')
 from util.db.sql_utils import getdb
 from util.file_util import get_account_file, download_video, get_upload_login_path
 
@@ -29,7 +31,7 @@ async def cookie_auth(account_file):
         # 访问指定的 URL
         await page.goto("https://cp.kuaishou.com/article/publish/video")
         try:
-            await page.wait_for_selector(".SOCr7n1uoqI-", timeout=5000)  # 等待5秒
+            await page.wait_for_selector(".SOCr7n1uoqI-", timeout=10000)  # 等待5秒
             loguru.logger.info("[+] cookie 有效")
             return True
         except Exception as e:
@@ -51,12 +53,13 @@ async def kuaishou_setup(account_file, handle=False):
 async def kuaishou_cookie_gen(account_file):
     async with async_playwright() as playwright:
         options = {
-            'headless': True
+            'headless': False
         }
         # Make sure to run headed.
         browser = await playwright.chromium.launch(**options)
         # Setup context however you like.
         context = await browser.new_context()  # Pass any options
+        await context.add_init_script(path=libs_path)
         # Pause the page, and start recording manually.
         page = await context.new_page()
         await page.goto("https://cp.kuaishou.com/article/publish/video")
@@ -90,7 +93,7 @@ async def get_user_id(page):
         if user_id == 0:
             current_time = time.time()  # 获取当前时间
             elapsed_time = current_time - start_time  # 计算已经过去的时间
-            if elapsed_time > 5:  # 如果已经过去的时间超过5秒
+            if elapsed_time > 10:  # 如果已经过去的时间超过5秒
                 break  # 退出循环
         else:
             break  # 退出循环
@@ -129,11 +132,13 @@ class KuaiShouVideo(object):
     async def upload(self, playwright: Playwright, goods, user_info, account_file, local_executable_path) -> None:
         # 使用 Chromium 浏览器启动一个浏览器实例
         if local_executable_path:
-            browser = await playwright.chromium.launch(headless=True, executable_path=local_executable_path)
+            browser = await playwright.chromium.launch(headless=False, executable_path=local_executable_path)
         else:
-            browser = await playwright.chromium.launch(headless=True)
+            browser = await playwright.chromium.launch(headless=False)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
-        context = await browser.new_context(storage_state=f"{account_file}")
+        context = await browser.new_context(storage_state=f"{account_file}",permissions=['geolocation'],
+                                            geolocation={'latitude': float(goods['lat']),
+                                                         'longitude': float(goods['lng'])})
 
         # 创建一个新的页面
         page = await context.new_page()
@@ -165,11 +170,25 @@ class KuaiShouVideo(object):
         await page.get_by_text('不允许下载此作品').locator('..').locator('.ant-checkbox').click()
         await page.get_by_text('当前地点').locator('..').locator('.ant-radio').click()
         # 授权位置
-        await context.grant_permissions(['geolocation'])
-        # 输入品牌品牌
-        await page.locator('#rc_select_2').type(goods['brand'])
-        # 选择第一个
-        await page.press('#rc_select_2', "Enter")
+        while True:
+            if page.locator('.uUoMPMIW8HY-').is_visible():
+                break
+        while True:
+            # 输入品牌品牌
+            await page.locator('#rc_select_2').fill(goods['brand'])
+            # 等待页面加载并确保元素存在
+            await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
+            # 获取 rc-virtual-list-holder-inner 下的所有 ant-select-item
+            items = await page.query_selector_all('.rc-virtual-list-holder-inner .ant-select-item')
+            # 提取并打印每个 item 的 label 属性值
+            for item in items:
+                label_value = await item.get_attribute('label')
+                if goods['brand'] in label_value:
+                    await item.click()
+                    break
+            if goods['brand'] in label_value:
+                break
+            await asyncio.sleep(0.5)
         await video_is_upload(goods, page)
         try:
             await page.locator('.XwacrNGK2pY-').get_by_text('发布').click()
@@ -184,6 +203,8 @@ class KuaiShouVideo(object):
                                         timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
                 loguru.logger.info("  [-]视频发布成功")
                 db.execute(f"update video_goods_publish set state = 2 where id = {goods['id']}")
+                if os.path.exists(goods['video_path']):
+                    os.remove(goods['video_path'])
                 break
             except:
                 loguru.logger.info("  [-] 视频正在发布中...")
@@ -204,7 +225,7 @@ class KuaiShouVideo(object):
         async with async_playwright() as playwright:
             # 根据视频生成记录发布视频
             goods = db.fetchall(
-                "select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1")
+                "select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 group by vgp.user_id")
             for good in goods:
                 try:
                     user_infos = db.fetchall(f"select * from user_info where user_id = {good['user_id']}")

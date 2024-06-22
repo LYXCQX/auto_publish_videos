@@ -155,8 +155,8 @@ def add_watermark(input_stream, config: Config, watermark_content, watermark_typ
                                            fontcolor='yellow', borderw=1, bordercolor='red',
                                            fontfile=get_font_file(config))
     elif watermark_type == 'image':
-        input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, 10, 220)
-        input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, 10, 650)
+        input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, 20, 125)
+        input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, 20, 950)
 
     elif watermark_type == 'video':
         watermark_stream = ffmpeg.input(random.choice(config.watermark_video_path))
@@ -170,11 +170,11 @@ def add_watermark(input_stream, config: Config, watermark_content, watermark_typ
 def add_img_sy(watermark_image_path, input_stream, x, y):
     if watermark_image_path.endswith('gif'):
         watermark_stream = ffmpeg.input(watermark_image_path, stream_loop=-1)
-        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='250', h='250')
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1)
     else:
         watermark_stream = ffmpeg.input(watermark_image_path, loop=1)
-        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='250', h='250')
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1, enable='mod(t,1)')
     return input_stream
 

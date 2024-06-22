@@ -38,10 +38,10 @@ def add_user(platform, login_type, phone_number=None, verification_code=None):
         u_id, u_name = asyncio.run(kuaishou_cookie_gen(get_account_file('')))
         db = getdb()
         user_info = db.fetchone(f"select * from user_info where user_id = '{u_id}'")
-        if user_info == '' or user_info is None:
+        if user_info == '' or user_info is None and u_id != 0:
             insert_sql = "INSERT INTO user_info (user_id, username, type) VALUES (%s, %s, %s)"
             insert_values = (u_id, u_name, 1)
-            db.execute(insert_sql,insert_values)
+            db.execute(insert_sql, insert_values)
     user_data[request.remote_addr] = {
         platform: {'status': True,
                    'expiry': time.time() + EXPIRATION_TIME}

@@ -67,8 +67,8 @@ class VideoGoods(Base):
     top_sales_script = Column(String(255))
     state = Column(Integer)
     create_time = Column(DateTime)
-    longitude = Column(String)
-    dimension = Column(String)
+    lng = Column(String)
+    lat = Column(String)
     tips = Column(Text)
 
 

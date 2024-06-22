@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from video_dedup.config_parser import Config
 
 
-def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1.2, volume_b=0.3):
+def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1.5, volume_b=0.1):
     # 获取音频a的时长
     # probe = ffmpeg.probe(origin_audio_file)
     # duration_a = float(next(stream for stream in probe['streams'] if stream['codec_type'] == 'audio')['duration'])
@@ -124,7 +124,7 @@ class CustomSubMaker(edge_tts.SubMaker):
         return data
 
 
-def split_text_len(sub_text, max_length=12):
+def split_text_len(sub_text, max_length=11):
     # 使用正则表达式按符号分割字符串
     split_text = re.split(r'\W+(?<![-./])', sub_text)
 
