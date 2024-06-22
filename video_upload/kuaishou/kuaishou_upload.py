@@ -75,7 +75,7 @@ async def kuaishou_cookie_gen(account_file):
         await asyncio.sleep(0.5)
         user_id = await get_user_id(page)
         user_name = await page.locator('.detail__name').text_content()
-        loguru.logger.info(user_id, user_name)
+        loguru.logger.info(f'{user_id}---{user_name}')
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=get_account_file(user_id))
         try:
@@ -90,7 +90,7 @@ async def get_user_id(page):
     while True:
         user_id = await page.locator('.detail__userKwaiId').text_content()
         user_id = user_id.replace(" 用户 ID：", "").strip()
-        if user_id == 0:
+        if user_id == '0':
             current_time = time.time()  # 获取当前时间
             elapsed_time = current_time - start_time  # 计算已经过去的时间
             if elapsed_time > 10:  # 如果已经过去的时间超过5秒
