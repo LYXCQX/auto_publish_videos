@@ -1,6 +1,7 @@
 import hashlib
 import os
 import tempfile
+import uuid
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -121,12 +122,12 @@ def get_file_names(folder_path):
 
 
 def get_temp_path(suffix):
-    temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
-    temp_file_path = temp_file.name
-
-    # 关闭临时文件，ffmpeg 输出流会自动写入到该临时文件中
-    temp_file.close()
-    return temp_file_path
+    # temp_file = tempfile.NamedTemporaryFile(suffix=suffix, delete=False)
+    # temp_file_path = temp_file.name
+    #
+    # # 关闭临时文件，ffmpeg 输出流会自动写入到该临时文件中
+    # temp_file.close()
+    return f'video/temp/{uuid.uuid4()}{suffix}'
 
 
 def calculate_video_md5(file_path):

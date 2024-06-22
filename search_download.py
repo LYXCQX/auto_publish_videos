@@ -71,7 +71,7 @@ def start_download():
                 for video in videos:
                     try:
                         if video['note_id'] not in file_name and video['note_id'] not in downloads_video:
-                            down_path = f"{config.sub_remove_path}{brand}"
+                            down_path = f"{config.sub_remove_path}{brand}/{datetime.now().strftime('%Y-%m-%d')}"
                             if not os.path.exists(down_path):
                                 os.makedirs(down_path)
                             video_path = f"{down_path}/{video['note_id']}.mp4"
