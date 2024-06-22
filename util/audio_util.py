@@ -22,8 +22,6 @@ def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1
 
     # 合并音频a和截取后的音频b
     merged_audio = ffmpeg.filter([origin_audio, audio_b_trimmed], 'amix', duration='longest')
-    ffmpeg.output(merged_audio, f'D:\IDEA\workspace\\auto_publish_videos\\video\\temp\\123.mp3').run(
-        overwrite_output=True)
     return merged_audio
 
 
