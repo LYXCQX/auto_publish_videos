@@ -18,7 +18,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 libs_path = os.path.join(current_dir, '..', '..', 'MediaCrawler', 'libs', 'stealth.min.js')
 from util.db.sql_utils import getdb
 from util.file_util import get_account_file, download_video, get_upload_login_path
-
+loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 db = getdb()
 
 
@@ -236,7 +236,7 @@ class KuaiShouVideo(object):
                         await kuaishou_setup(account_file, handle=True)
                         await self.upload(playwright, good, user_info, account_file, '')
                 except Exception as e:
-                    loguru.logger.info(e)
+                    loguru.logger.error(e)
 
 
 if __name__ == '__main__':

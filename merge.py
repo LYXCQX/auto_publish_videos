@@ -72,7 +72,7 @@ def get_goods_des(video_good):
     goods_des = [
         f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},仅需{real_price},{random.choice(config.center_sales)}",
         f"{video_good['brand']}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{random.choice(config.center_sales)}",
-        f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用，",
+        f"{video_good['brand']}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用",
         f"{video_good['brand']}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{random.choice(config.center_sales)}",
         f"{video_good['brand']}{video_good['goods_title']}只要{real_price}，{random.choice(config.center_sales)}"]
     if video_good['goods_des'] != '' and video_good['goods_des'] is not None:
