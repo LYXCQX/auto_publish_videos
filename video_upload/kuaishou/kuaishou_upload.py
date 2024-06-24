@@ -18,6 +18,7 @@ current_dir = os.path.dirname(os.path.abspath(__file__))
 libs_path = os.path.join(current_dir, '..', '..', 'MediaCrawler', 'libs', 'stealth.min.js')
 from util.db.sql_utils import getdb
 from util.file_util import get_account_file, download_video, get_upload_login_path
+
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 db = getdb()
 
@@ -123,8 +124,8 @@ async def video_is_upload(goods, page):
                     loguru.logger.info("  [-] 发现上传出错了...")
                     loguru.logger.info("视频出错了，重新上传中")
                     await clickUpload(goods, page, ".SOCr7n1uoqI-")
-        except:
-            loguru.logger.info("  [-] 正在上传视频中...")
+        except Exception as e:
+            loguru.logger.error("  [-] 正在上传视频中...", e)
             await asyncio.sleep(2)
 
 
@@ -136,7 +137,7 @@ class KuaiShouVideo(object):
         else:
             browser = await playwright.chromium.launch(headless=True)
         # 创建一个浏览器上下文，使用指定的 cookie 文件
-        context = await browser.new_context(storage_state=f"{account_file}",permissions=['geolocation'],
+        context = await browser.new_context(storage_state=f"{account_file}", permissions=['geolocation'],
                                             geolocation={'latitude': float(goods['lat']),
                                                          'longitude': float(goods['lng'])})
 
@@ -171,8 +172,10 @@ class KuaiShouVideo(object):
         await page.get_by_text('当前地点').locator('..').locator('.ant-radio').click()
         # 授权位置
         while True:
-            if page.locator('.uUoMPMIW8HY-').is_visible():
+            pp_bl = await page.locator('.uUoMPMIW8HY-').is_visible()
+            if pp_bl:
                 break
+        start_time = time.time()  # 获取开始时间
         while True:
             # 输入品牌品牌
             await page.locator('#rc_select_2').fill(goods['brand'])
@@ -181,35 +184,44 @@ class KuaiShouVideo(object):
             # 获取 rc-virtual-list-holder-inner 下的所有 ant-select-item
             items = await page.query_selector_all('.rc-virtual-list-holder-inner .ant-select-item')
             # 提取并打印每个 item 的 label 属性值
+            brand_flag = False
             for item in items:
                 label_value = await item.get_attribute('label')
-                if goods['brand'] in label_value:
+                brand_new = goods['brand'].replace('（', '(')
+                brand_new = brand_new.split('(')[0] if '(' in brand_new else brand_new
+                if brand_new in label_value:
+                    brand_flag = True
                     await item.click()
                     break
-            if goods['brand'] in label_value:
+            if brand_flag:
                 break
+            current_time = time.time()  # 获取当前时间
+            elapsed_time = current_time - start_time  # 计算已经过去的时间
+            if elapsed_time > 10:  # 如果已经过去的时间超过5秒
+                return  # 退出循环
             await asyncio.sleep(0.5)
         await video_is_upload(goods, page)
         try:
             await page.locator('.XwacrNGK2pY-').get_by_text('发布').click()
-        except:
-            loguru.logger.error(f"{goods['goods_name']}上传快手发现上传出错了...{goods['id']}")
-            pass
+        except Exception as e:
+            loguru.logger.error(f"{goods['goods_name']}上传快手发现上传出错了...{goods['id']}{e}")
         # 判断视频是否发布成功
         while True:
             # 判断视频是否发布成功
             try:
                 await page.wait_for_url("https://cp.kuaishou.com/article/manage/video?status=2&from=publish",
-                                        timeout=1500)  # 如果自动跳转到作品页面，则代表发布成功
+                                        timeout=15000)  # 如果自动跳转到作品页面，则代表发布成功
                 loguru.logger.info("  [-]视频发布成功")
                 db.execute(f"update video_goods_publish set state = 2 where id = {goods['id']}")
                 if os.path.exists(goods['video_path']):
                     os.remove(goods['video_path'])
                 break
-            except:
-                loguru.logger.info("  [-] 视频正在发布中...")
+            except Exception as e:
+                loguru.logger.info(f"  [-] 视频正在发布中...{e}")
                 # await page.screenshot(full_page=True)
+
                 await asyncio.sleep(0.5)
+                await page.screenshot(path=f'imgs/{uuid.uuid4()}.png')
                 # 查找按钮
                 publish_button = page.locator('.XwacrNGK2pY-').get_by_text('发布')
                 # 检查按钮是否存在

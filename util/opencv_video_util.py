@@ -172,7 +172,7 @@ def resize_img(image, width, height):
 
 def frames_to_video(frames, output_file):
     loguru.logger.info('使用{}帧数据来生成视频'.format(str(len(frames))))
-    video_codec = cv2.VideoWriter_fourcc(*'X264')
+    video_codec = cv2.VideoWriter_fourcc(*'mp4v')
     shape = frames[0].shape
     size = (shape[1], shape[0])
     video_writer = cv2.VideoWriter(output_file, video_codec, 30, size)
