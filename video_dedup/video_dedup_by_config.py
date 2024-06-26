@@ -161,8 +161,8 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
             os.remove(output_video_tmp)
         if input_video:
             os.remove(input_video)
-        # if ffmpeg_tmp:
-        #     os.remove(ffmpeg_tmp)
+        if ffmpeg_tmp:
+            os.remove(ffmpeg_tmp)
         pass
     return final_video_path
 
