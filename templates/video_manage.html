@@ -25,7 +25,7 @@
         }
         .media-item {
             position: relative;
-            flex: 1 1 calc(33.333% - 1rem);
+            flex: 1 1 calc(33.333% - 1rem); /* Default to 3 items per row */
             box-sizing: border-box;
             background: #fff;
             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
@@ -52,6 +52,7 @@
             margin-top: 20px;
             display: flex;
             gap: 10px;
+            align-items: center;
         }
         .folder-header {
             display: flex;
@@ -78,11 +79,13 @@
 </head>
 <body>
 <div class="container">
-    <div id="folders" class="mt-4"></div>
     <div class="controls mt-4">
+        <label for="itemsPerRow">每行显示的文件数量:</label>
+        <input id="itemsPerRow" type="number" class="form-control w-auto" value="3" min="1" max="10" onchange="updateItemsPerRow()">
         <button class="btn btn-primary" onclick="toggleSelectAll()">全选</button>
         <button class="btn btn-danger" onclick="deleteSelected()">删除选中</button>
     </div>
+    <div id="folders" class="mt-4"></div>
 </div>
 
 <script>
@@ -344,6 +347,14 @@
 
         mediaElements.forEach(mediaElement => {
             intersectionObserver.observe(mediaElement);
+        });
+    }
+
+    function updateItemsPerRow() {
+        const itemsPerRow = document.getElementById('itemsPerRow').value;
+        const mediaItems = document.querySelectorAll('.media-item');
+        mediaItems.forEach(item => {
+            item.style.flex = `1 1 calc(${100 / itemsPerRow}% - 1rem)`;
         });
     }
 </script>
