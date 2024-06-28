@@ -156,7 +156,7 @@ class KuaiShouVideo(object):
         # 这里为了避免页面变化，故使用相对位置定位：作品标题父级右侧第一个元素的input子元素
         await asyncio.sleep(1)
         loguru.logger.info("  [-] 正在填充标题和话题...")
-        await page.locator(".clGhv3UpdEo-").fill(goods['goods_des'])
+        await page.locator(".clGhv3UpdEo-").fill(goods['video_title'])
         loguru.logger.info(goods['tips'].split('#'))
         tips = goods['tips'].replace("\r", "").replace('\n', '').strip().split('#')
         tips = random.sample(tips, 4) if len(tips) > 3 else tips

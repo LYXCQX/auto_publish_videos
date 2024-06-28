@@ -45,8 +45,7 @@ def scheduled_job():
                     f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
                 pub_num = len(video_goods_publish)
                 for video_good in video_goods:
-                    video_good[
-                        'goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
+                    video_good['goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
                     video_good['sales_script'] = get_sales_scripts(video_good)
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
@@ -56,8 +55,8 @@ def scheduled_job():
                             try:
                                 video_path = process_dedup_by_config(config, video_good)
                                 db.execute(
-                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`, `state`) "
-                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}',{1})")
+                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
+                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}','{video_good['goods_des']}',{1})")
                                 pub_num +=1
                             except Exception as e:
                                 loguru.logger.exception(
