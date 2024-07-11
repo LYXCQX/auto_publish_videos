@@ -45,7 +45,8 @@ def scheduled_job():
                     f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
                 pub_num = len(video_goods_publish)
                 for video_good in video_goods:
-                    video_good['goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
+                    video_good[
+                        'goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
                     video_good['sales_script'] = get_sales_scripts(video_good)
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
@@ -57,7 +58,7 @@ def scheduled_job():
                                 db.execute(
                                     f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
                                     f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}','{video_good['goods_des']}',{1})")
-                                pub_num +=1
+                                pub_num += 1
                             except Exception as e:
                                 loguru.logger.exception(
                                     f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
@@ -71,18 +72,29 @@ def scheduled_job():
 def get_goods_des(video_good):
     goods_price = convert_amount(video_good['goods_price'])
     real_price = convert_amount(video_good['real_price'])
+    get_good_des_ran(video_good)
     goods_des = [
-        f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用",
-        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道",
-        f"{video_good['goods_title']}仅需{real_price}",
-        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟",
-        f"{video_good['goods_title']}现在价格超值，这个价格简直不能太好了，这个价格不会持续太久",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price}，{random.choice(config.center_sales)}"]
-    if video_good['goods_des'] != '' and video_good['goods_des'] is not None:
-        goods_des.append(video_good['goods_des'])
+        f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}，这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用",
+        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])}",
+        f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])}",
+        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])}",
+        f"{video_good['goods_title']}现在价格超值，,{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久",
+        f"{real_price}就可以享受到{video_good['goods_title']},{video_good['goods_des']}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}，{random.choice(config.center_sales)}"]
     return random.choice(goods_des)
+
+
+def get_good_des_ran(goods_des):
+    goods_des = goods_des if goods_des is not None else ''
+    goods_des_s = [
+        goods_des,
+        '',
+        goods_des
+    ]
+
+    return random.choice(goods_des_s)
 
 
 def get_sales_scripts(video_good):
