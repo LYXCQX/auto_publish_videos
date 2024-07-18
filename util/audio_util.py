@@ -8,7 +8,7 @@ from pydub import AudioSegment
 from video_dedup.config_parser import Config
 
 
-def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1.5, volume_b=0.1):
+def merge_and_adjust_volumes(origin_audio, bgm_audio, max_sec, volume_a=1.5, volume_b=0.1):
     # 获取音频a的时长
     # probe = ffmpeg.probe(origin_audio_file)
     # duration_a = float(next(stream for stream in probe['streams'] if stream['codec_type'] == 'audio')['duration'])
@@ -18,7 +18,7 @@ def merge_and_adjust_volumes(origin_audio, bgm_audio, config: Config, volume_a=1
     bgm_audio = bgm_audio.filter('volume', volume=volume_b)
 
     # 截取音频b以匹配音频a的时长
-    audio_b_trimmed = bgm_audio.filter('atrim', duration=config.max_sec)
+    audio_b_trimmed = bgm_audio.filter('atrim', duration=max_sec)
 
     # 合并音频a和截取后的音频b
     merged_audio = ffmpeg.filter([origin_audio, audio_b_trimmed], 'amix', duration='longest')
@@ -117,14 +117,14 @@ class CustomSubMaker(edge_tts.SubMaker):
             except IndexError:
                 pass
             sub_mak = edge_tts.submaker.formatter(start_time, self.offset[j][1], sub_t)
-            data += f'{index}\r\n{sub_mak if sub_text == sub_t else sub_mak.replace(sub_t,sub_text)}'
+            data += f'{index}\r\n{sub_mak if sub_text == sub_t else sub_mak.replace(sub_t, sub_text)}'
             j += 1
         return data
 
 
 def split_text_len(sub_text, max_length=11):
     # 使用正则表达式按符号分割字符串
-    split_text = re.split(r'\W+(?<![-./])', sub_text)
+    split_text = re.split(r'\W+(?<![-./| ])', sub_text)
 
     # 移除空字符串
     split_text = [s for s in split_text if s]
@@ -132,6 +132,7 @@ def split_text_len(sub_text, max_length=11):
     # 对于任何超过 max_length 的部分，进一步分割
     final_split = []
     for part in split_text:
+        part = part.replace('|', " ")
         if len(part) > max_length:
             # 进一步分割为每个不超过 max_length 的部分
             # final_split.append()

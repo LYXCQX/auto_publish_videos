@@ -126,19 +126,19 @@ def on_message(message, data):
                     goods_items = goods['skuDetailList'][0]['itemSkuSetMealDetail']['groups'][0]
                 print(goods_items)
                 if goods_items is not None and len(goods_items['setMealContents']) > 1:
-                    goods_des = f"套餐包含{goods_items['title']},"
+                    goods_des = f"套餐包含{remove_punctuation(goods_items['title'])}\n"
                     if goods_items['fromNum'] != goods_items['selectNum']:
                         goods_des += f"{goods_items['fromNum']} 选 {goods_items['selectNum']}"
                     for meal_contents in goods_items['setMealContents']:
-                        goods_des += f"{meal_contents['title']}{meal_contents['count']}份,"
+                        goods_des += f"{remove_punctuation(meal_contents['title'])}|{meal_contents['count']}份\n"
                 if goods_des is None:
                     goods_meal = goods['skuDetailList'][0]['itemSkuSetMealDetail']
                     if 'remark' in goods_meal:
                         goods_remark = goods_meal['remark']
                         print(goods_remark)
-                        if goods_remark != '' and '套餐内容' in goods_remark:
+                        if goods_remark != '' and '套餐内容' in goods_remark and '套餐内容' != goods_remark:
                             goods_des = goods_remark.split('\n', 1)[0]
-                            goods_des = goods_des.replace('套餐内容：', '套餐包含').replace('套餐内容', '套餐包含')
+                            goods_des = goods_des.replace('套餐内容：', '套餐包含').replace('套餐内容', '套餐包含').replace('*', '|')
                             print(goods_des)
                 item_title = (goods['itemTitle'].replace('shakeshake（自动发券到小程序）', '')
                               .replace('（自动发券到小程序）', '')
@@ -161,6 +161,10 @@ def on_message(message, data):
     else:
         loguru.logger.info(message)
 
+def remove_punctuation(text):
+    # 使用正则表达式去除标点符号
+    text_without_punctuation = re.sub(r'[^\w\s]', '', text)
+    return text_without_punctuation
 
 process = frida.get_remote_device()
 
