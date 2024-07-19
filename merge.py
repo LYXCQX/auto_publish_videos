@@ -9,6 +9,7 @@ from filelock import FileLock, Timeout
 
 from util.audio_util import wrap_text
 from util.db.sql_utils import getdb
+from util.file_util import get_mp4_files_path
 from video_dedup.config_parser import read_dedup_config
 from video_dedup.video_dedup_by_config import process_dedup_by_config
 
@@ -45,8 +46,7 @@ def scheduled_job():
                     f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
                 pub_num = len(video_goods_publish)
                 for video_good in video_goods:
-                    video_good[
-                        'goods_des'] = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
+                    goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
                     video_good['sales_script'] = get_sales_scripts(video_good)
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
@@ -54,11 +54,16 @@ def scheduled_job():
                         if (pub_num < user_info['pub_num']
                                 and video_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]):
                             try:
-                                video_path = process_dedup_by_config(config, video_good)
-                                db.execute(
-                                    f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
-                                    f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}','{video_good['goods_des']}',{1})")
-                                pub_num += 1
+                                video_path_list = get_mp4_files_path(f"{config.video_path}{video_good['brand_base']}")
+                                if len(video_path_list) < 1:
+                                    loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
+                                else:
+                                    video_path = process_dedup_by_config(config, video_good, goods_des)
+                                    if video_path is not None:
+                                        db.execute(
+                                            f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
+                                            f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}','{goods_des}',{1})")
+                                        pub_num += 1
                             except Exception as e:
                                 loguru.logger.exception(
                                     f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
@@ -75,12 +80,12 @@ def get_goods_des(video_good):
     get_good_des_ran(video_good)
     goods_des = [
         f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}，这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用",
-        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])}",
-        f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])}",
-        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])}",
-        f"{video_good['goods_title']}现在价格超值，,{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久",
-        f"{real_price}就可以享受到{video_good['goods_title']},{video_good['goods_des']}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}，这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用,{random.choice(config.center_sales)}",
+        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"{video_good['goods_title']}现在价格超值，,{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久,{random.choice(config.center_sales)}",
+        f"{real_price}就可以享受到{video_good['goods_title']},{video_good['goods_des']},{random.choice(config.center_sales)}",
         f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
         f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}，{random.choice(config.center_sales)}"]
     return random.choice(goods_des)

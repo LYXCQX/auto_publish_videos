@@ -14,22 +14,25 @@ from video_dedup.config_parser import Config
 from video_merge.main import merge_video
 
 
-def process_dedup_by_config(config: Config, good: VideoGoods):
+def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
     time0 = time.time()
     audio_path_tmp = f'{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp3'
     srt_path_tmp = get_temp_path('.srt')
     opencv_tmp = ''
     output_video_tmp = ''
     input_video = ''
+    ffmpeg_tmp = ''
     try:
-        goods_des = good['goods_des']
         create_audio(goods_des, audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
         audio_stream = read_ffmpeg_audio_from_file(audio_path_tmp)
         merged_audio = AudioSegment.from_file(audio_path_tmp)
         audio_duration = AudioSegment.from_file(audio_path_tmp).duration_seconds
-        config.max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
+        loguru.logger.info(f'音频时间{audio_duration}')
+        max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
         # 按照配置合并视频
-        input_video = merge_video(config, good)
+        input_video = merge_video(config, good, max_sec)
+        if input_video is None:
+            return
 
         width, height, origin_duration, bit_rate = video_properties(input_video)
 
@@ -65,7 +68,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
         if config.bgm_audio_path != '':
             loguru.logger.info('config.bgm_audio_path -> ', config.bgm_audio_path)
             bgm_audio = read_ffmpeg_audio_from_file(random.choice(config.bgm_audio_path))
-            merged_audio = merge_and_adjust_volumes(audio_stream, bgm_audio, config)
+            merged_audio = merge_and_adjust_volumes(audio_stream, bgm_audio, max_sec)
 
         tt = time.time()
         loguru.logger.info('step1 cost time ', tt - time0)
@@ -161,8 +164,8 @@ def process_dedup_by_config(config: Config, good: VideoGoods):
             os.remove(output_video_tmp)
         if input_video:
             os.remove(input_video)
-        if ffmpeg_tmp:
-            os.remove(ffmpeg_tmp)
+        # if ffmpeg_tmp:
+        #     os.remove(ffmpeg_tmp)
         pass
     return final_video_path
 
