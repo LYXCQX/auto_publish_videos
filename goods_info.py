@@ -103,7 +103,7 @@ def on_message(message, data):
                 else:
                     goods_map[item_id] = (
                         f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
-                        f"(%s,%s,%s,%s,%s,%s,%s,%s,'{brand_base}','{brand}',null,'刷到先囤  不用可退  到期自动退',1,{lng},{lat},%s)")
+                        f"(%s,%s,%s,%s,%s,%s,%s,%s,'{brand_base}','{brand}',null,'刷到先囤 不用可退 到期自动退',1,{lng},{lat},%s)")
 
         elif json_res['url'].startswith('/rest/op/vc/distribution/item/itemDetail'):
             goods = json.loads(json_res['responseBody'])['data']
@@ -126,11 +126,16 @@ def on_message(message, data):
                     goods_items = goods['skuDetailList'][0]['itemSkuSetMealDetail']['groups'][0]
                 print(goods_items)
                 if goods_items is not None and len(goods_items['setMealContents']) > 1:
-                    goods_des = f"套餐包含{remove_punctuation(goods_items['title'])}\n"
+                    goods_des = f"套餐包含{remove_punctuation(goods_items['title'])}"
                     if goods_items['fromNum'] != goods_items['selectNum']:
-                        goods_des += f"{goods_items['fromNum']} 选 {goods_items['selectNum']}"
+                        goods_des += f"{goods_items['fromNum']} 选 {goods_items['selectNum']}\n"
+                    else:
+                        goods_des += f"套餐包含{remove_punctuation(goods_items['title'])}"
                     for meal_contents in goods_items['setMealContents']:
-                        goods_des += f"{remove_punctuation(meal_contents['title'])}|{meal_contents['count']}份\n"
+                        if meal_contents['count']>1:
+                            goods_des += f"{remove_punctuation(meal_contents['title'])}|{meal_contents['count']}份\n"
+                        else:
+                            goods_des += f"{remove_punctuation(meal_contents['title'])}\n"
                 if goods_des is None:
                     goods_meal = goods['skuDetailList'][0]['itemSkuSetMealDetail']
                     if 'remark' in goods_meal:
@@ -156,7 +161,7 @@ def on_message(message, data):
                 else:
                     goods_map[item_id] = (
                         f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
-                        f"({item_id},'{item_title}','{item_title}','{goods_des}',{photo_commission},{sale_price},{market_price},{sale_volume},%s,%s,null,'刷到先囤  不用可退  到期自动退',1,%s,%s,'{tips}')")
+                        f"({item_id},'{item_title}','{item_title}','{goods_des}',{photo_commission},{sale_price},{market_price},{sale_volume},%s,%s,null,'刷到先囤 不用可退 到期自动退',1,%s,%s,'{tips}')")
 
     else:
         loguru.logger.info(message)

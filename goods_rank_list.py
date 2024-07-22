@@ -54,7 +54,7 @@ def on_message(message, data):
                 print(f"新增商品{good['itemTitle']}")
                 db.execute(
                     f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`) "
-                    f"VALUES ({good['itemId']},'{good['itemTitle']}','{good['itemTitle']}',null,{good['commission']},{good['salePrice']},{good['marketPrice']},{good['saleVolume']},'{re.split(r'[（(]', good['poiInfo']['poiName'], 1)[0]}','{good['poiInfo']['poiName']}',null,'刷到先囤  不用可退  到期自动退',1,{good['poiInfo']['longitude']},{good['poiInfo']['latitude']})")
+                    f"VALUES ({good['itemId']},'{good['itemTitle']}','{good['itemTitle']}',null,{good['commission']},{good['salePrice']},{good['marketPrice']},{good['saleVolume']},'{re.split(r'[（(]', good['poiInfo']['poiName'], 1)[0]}','{good['poiInfo']['poiName']}',null,'刷到先囤 不用可退 到期自动退',1,{good['poiInfo']['longitude']},{good['poiInfo']['latitude']})")
 
     else:
         print(message)

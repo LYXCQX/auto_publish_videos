@@ -43,35 +43,66 @@ def scheduled_job():
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
                 video_goods_publish = db.fetchall(
-                    f'select vg_id from video_goods_publish where user_id = {user_info["user_id"]} and DATE(create_time) = CURDATE()')
+                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]} and DATE(vgp.create_time) = CURDATE()')
+                video_goods_publish_his = db.fetchall(
+                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]}')
                 pub_num = len(video_goods_publish)
-                for video_good in video_goods:
-                    goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(video_good)}，{random.choice(config.tail_sales)}"
-                    video_good['sales_script'] = get_sales_scripts(video_good)
+                use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
+                if len(use_goods) ==0:
+                    use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
+                random.shuffle(use_goods)
+                for use_good in use_goods:
+                    goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
+                    use_good['sales_script'] = get_sales_scripts(use_good)
                     loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
                     # 相同的平台才能生成对应的视频
-                    if user_info['type'] == video_good['type']:
+                    if user_info['type'] == use_good['type']:
                         if (pub_num < user_info['pub_num']
-                                and video_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]):
+                                and use_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]):
                             try:
-                                video_path_list = get_mp4_files_path(f"{config.video_path}{video_good['brand_base']}")
+                                video_path_list = get_mp4_files_path(f"{config.video_path}{use_good['brand_base']}")
                                 if len(video_path_list) < 1:
                                     loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
                                 else:
-                                    video_path = process_dedup_by_config(config, video_good, goods_des)
+                                    video_path = process_dedup_by_config(config, use_good, goods_des)
                                     if video_path is not None:
                                         db.execute(
                                             f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
-                                            f"VALUES ({video_good['goods_id']},{user_info['user_id']},{video_good['id']},'{video_path}','{video_good['brand']}','{goods_des}',{1})")
+                                            f"VALUES ({use_good['goods_id']},{user_info['user_id']},{use_good['id']},'{video_path}','{use_good['brand']}','{goods_des}',{1})")
                                         pub_num += 1
                             except Exception as e:
                                 loguru.logger.exception(
-                                    f'{user_info["user_id"]} -  商品名称:{video_good["goods_name"]} 商品id:{video_good["id"]}')
+                                    f'{user_info["user_id"]} -  商品名称:{use_good["goods_name"]} 商品id:{use_good["id"]}')
                                 pass
             except Exception as e:
                 loguru.logger.error(f"生成要发布的视频失败: {e}")
     except Exception as e:
         loguru.logger.error(f"生成要发布的视频失败: {e}")
+
+
+def get_use_good(video_goods, video_goods_publish, video_type):
+    pub_ids = []
+    pub_brand = []
+    for vg_p in video_goods_publish:
+        pub_ids.append(vg_p['vg_id'])
+        pub_brand.append(vg_p['brand_base'])
+    no_brand = []
+    no_id = []
+    for video_good in video_goods:
+        if video_good['brand_base'] not in pub_brand:
+            no_brand.append(video_good)
+        elif video_good['id'] not in pub_ids:
+            no_id.append(video_good)
+    if len(no_brand) > 0:
+        use_goods = no_brand
+    elif len(no_id) > 0:
+        use_goods = no_id
+    else:
+        if video_type == 1:
+            use_goods = []
+        else:
+            use_goods = video_goods
+    return use_goods
 
 
 def get_goods_des(video_good):
