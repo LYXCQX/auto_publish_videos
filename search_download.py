@@ -5,7 +5,7 @@ import os
 import sys
 import time
 from datetime import datetime
-
+import ffmpeg
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock, Timeout
@@ -74,10 +74,15 @@ def start_download():
                             down_path = f"{config.sub_remove_path}{brand}/{datetime.now().strftime('%Y-%m-%d')}"
                             if not os.path.exists(down_path):
                                 os.makedirs(down_path)
+                            video_path_tem = f"{down_path}/{video['note_id']}.mp4"
                             video_path = f"{down_path}/{video['note_id']}.mp4"
                             if not os.path.exists(video_path):
                                 if video['video_url_none_sy'] != '':
-                                    download_video(video['video_url_none_sy'], video_path)
+                                    download_video(video['video_url_none_sy'], video_path_tem)
+                                    input_stream = ffmpeg.input(video_path_tem)
+                                    output_stream = ffmpeg.output(input_stream['v'], input_stream['a'], video_path, c='copy')
+
+                                    ffmpeg.run(output_stream)
                                     downloads_video.append(video['note_id'])
                     except Exception as e:
                         loguru.logger.error(f"下载视频时发生错误: {e}")
@@ -102,5 +107,5 @@ if __name__ == "__main__":
         initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second,
                                                         microsecond=0)
         # 使用 cron 规则指定每天23点执行一次
-        scheduler.add_job(download_lock, 'cron', hour=23, minute=0, max_instances=1)
+        scheduler.add_job(download_lock, 'cron', hour=3, minute=0, max_instances=1)
         scheduler.start()

@@ -48,8 +48,8 @@ def scheduled_job():
                     f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]}')
                 pub_num = len(video_goods_publish)
                 use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
-                if len(use_goods) ==0:
-                    use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
+                if len(use_goods) == 0:
+                    use_goods = get_use_good(video_goods, video_goods_publish, 0)
                 random.shuffle(use_goods)
                 for use_good in use_goods:
                     goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
@@ -89,10 +89,14 @@ def get_use_good(video_goods, video_goods_publish, video_type):
     no_brand = []
     no_id = []
     for video_good in video_goods:
-        if video_good['brand_base'] not in pub_brand:
-            no_brand.append(video_good)
-        elif video_good['id'] not in pub_ids:
-            no_id.append(video_good)
+        video_path_list = get_mp4_files_path(f"{config.video_path}{video_good['brand_base']}")
+        if len(video_path_list) > 1:
+            if video_good['brand_base'] not in pub_brand:
+                no_brand.append(video_good)
+            elif video_good['id'] not in pub_ids:
+                no_id.append(video_good)
+        else:
+            video_goods.remove(video_good)
     if len(no_brand) > 0:
         use_goods = no_brand
     elif len(no_id) > 0:
