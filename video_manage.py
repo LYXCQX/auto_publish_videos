@@ -15,15 +15,19 @@ def index():
     return render_template('video_manage.html')
 
 
+import os
+
 def get_directory_structure(directory):
     dir_structure = {}
     for root, dirs, files in os.walk(directory):
-        subdir = dir_structure
-        for part in root.replace(directory, '').split(os.sep):
-            if part:
-                subdir = subdir.setdefault(part, {})
-        subdir['files'] = files
+        if files:
+            subdir = dir_structure
+            for part in root.replace(directory, '').split(os.sep):
+                if part:
+                    subdir = subdir.setdefault(part, {})
+            subdir['files'] = files
     return dir_structure
+
 
 
 @app.route('/files', methods=['GET'])
