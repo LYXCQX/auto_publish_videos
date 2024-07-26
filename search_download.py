@@ -43,8 +43,11 @@ def download_lock():
 
 def start_download():
     try:
-        db = getdb()
-        brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
+        platform = 'xhs'
+        lt = 'qrcode'
+        type = 'search'
+        start = 1
+        json_store_path = f'data/{platform}/json/'
         dowaloads_file = 'download.txt'
         if os.path.exists(dowaloads_file) and os.path.getsize(dowaloads_file) > 0:
             with open(dowaloads_file, 'r', encoding='utf-8') as file:
@@ -52,46 +55,50 @@ def start_download():
         else:
             # 如果文件不存在或为空，初始化一个空列表
             downloads_video = []
-
-        for brand in brands:
-            try:
-                platform = 'xhs'
-                lt = 'qrcode'
-                type = 'search'
-                start = 1
+        if os.path.exists(f'{json_store_path}{type}_contents_{utils.get_current_date()}.json'):
+            loguru.logger.info('今天已经爬取过视频路径，不再重新爬取')
+        else:
+            db = getdb()
+            brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
+            keywords = ''
+            for brand in brands:
                 brand = brand['brand_base']
-                keywords = brand + '视频素材'
-
-                asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
-                json_store_path = f'data/{platform}'
-                file_count = max([int(file_name.split("_")[0]) for file_name in os.listdir(json_store_path)])
-                file_patch = f"{json_store_path}/{file_count}_{type}_contents_{utils.get_current_date()}.json"
-                videos = json.load(open(file_patch, encoding='utf-8'))
-                file_name = get_file_names([config.sub_remove_path, config.need_split_path, config.video_path])
-                for video in videos:
-                    try:
-                        if video['note_id'] not in file_name and video['note_id'] not in downloads_video:
-                            down_path = f"{config.sub_remove_path}{brand}/{datetime.now().strftime('%Y-%m-%d')}"
-                            if not os.path.exists(down_path):
-                                os.makedirs(down_path)
-                            video_path_tem = f"{down_path}/{video['note_id']}.mp4"
-                            video_path = f"{down_path}/{video['note_id']}.mp4"
-                            if not os.path.exists(video_path):
-                                if video['video_url_none_sy'] != '':
-                                    download_video(video['video_url_none_sy'], video_path_tem)
-                                    input_stream = ffmpeg.input(video_path_tem)
-                                    output_stream = ffmpeg.output(input_stream['v'], input_stream['a'], video_path, c='copy')
-
-                                    ffmpeg.run(output_stream)
-                                    downloads_video.append(video['note_id'])
-                    except Exception as e:
-                        loguru.logger.error(f"下载视频时发生错误: {e}")
-                os.remove(file_patch)
-            finally:
-                with open(dowaloads_file, 'w', encoding='utf-8') as file:
-                    json.dump(downloads_video, file, ensure_ascii=False, indent=4)
+                keywords += f'{brand}视频素材,'
+            asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))
+        download(dowaloads_file, downloads_video,json_store_path)
     except Exception as e:
         loguru.logger.error(f"下载视频时发生错误: {e}")
+
+
+def download(dowaloads_file, downloads_video,json_store_path):
+    try:
+
+        for file_patch in os.listdir(json_store_path):
+            file_patch = json_store_path+file_patch
+            videos = json.load(open(file_patch, encoding='utf-8'))
+            file_name = get_file_names([config.sub_remove_path, config.need_split_path, config.video_path])
+            for video in videos:
+                try:
+                    if video['note_id'] not in file_name and video['note_id'] not in downloads_video:
+                        down_path = f"{config.sub_remove_path}{video['key_word'].replace('视频素材','')}/{datetime.now().strftime('%Y-%m-%d')}"
+                        if not os.path.exists(down_path):
+                            os.makedirs(down_path)
+                        video_path_tem = f"{config.video_temp}/{video['note_id']}_tmp.mp4"
+                        video_path = f"{down_path}/{video['note_id']}.mp4"
+                        if not os.path.exists(video_path):
+                            if video['video_url_none_sy'] != '':
+                                download_video(video['video_url_none_sy'], video_path_tem)
+                                input_stream = ffmpeg.input(video_path_tem)
+                                output_stream = ffmpeg.output(input_stream['v'], input_stream['a'], video_path, c='copy', y='-y')
+                                ffmpeg.run(output_stream)
+                                os.remove(video_path_tem)
+                                downloads_video.append(video['note_id'])
+                except Exception as e:
+                    loguru.logger.error(f"下载视频时发生错误: {e}")
+            os.remove(file_patch)
+    finally:
+        with open(dowaloads_file, 'w', encoding='utf-8') as file:
+            json.dump(downloads_video, file, ensure_ascii=False, indent=4)
 
 
 if __name__ == "__main__":

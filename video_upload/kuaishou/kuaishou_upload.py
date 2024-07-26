@@ -32,7 +32,7 @@ async def cookie_auth(account_file):
         # 访问指定的 URL
         await page.goto("https://cp.kuaishou.com/article/publish/video")
         try:
-            await page.wait_for_selector(".SOCr7n1uoqI-", timeout=10000)  # 等待5秒
+            await page.wait_for_selector(".SOCr7n1uoqI-", timeout=20000)  # 等待5秒
             loguru.logger.info("[+] cookie 有效")
             return True
         except Exception as e:

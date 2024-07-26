@@ -112,26 +112,25 @@ def get_use_good(video_goods, video_goods_publish, video_type):
 def get_goods_des(video_good):
     goods_price = convert_amount(video_good['goods_price'])
     real_price = convert_amount(video_good['real_price'])
-    get_good_des_ran(video_good)
     goods_des = [
-        f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}，这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用,{random.choice(config.center_sales)}",
-        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
-        f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
-        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用,{random.choice(config.center_sales)}",
+        f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{video_good['goods_title']}现在价格超值，,{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久,{random.choice(config.center_sales)}",
-        f"{real_price}就可以享受到{video_good['goods_title']},{video_good['goods_des']},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])},{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}，{random.choice(config.center_sales)}"]
+        f"{real_price}就可以享受到{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}"]
     return random.choice(goods_des)
 
 
 def get_good_des_ran(goods_des):
     goods_des = goods_des if goods_des is not None else ''
     goods_des_s = [
-        goods_des,
+        f'{goods_des},',
         '',
-        goods_des
+        f'{goods_des},'
     ]
 
     return random.choice(goods_des_s)

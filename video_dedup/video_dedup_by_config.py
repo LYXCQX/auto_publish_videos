@@ -133,7 +133,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         if config.color_shift:
             frames = adjust_colors(frames)
 
-        if config.add_hzh:
+        if random.choice([True, False]):
             frames = huazhonghua_by_config(frames, config.hzh_factor, config.hzh_video_path)
 
         # 创建一个带有默认参数的函数
