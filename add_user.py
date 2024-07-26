@@ -156,15 +156,10 @@ async def user_login(platform, lt):
     # init db
     if config.SAVE_DATA_OPTION == "db":
         await db.init_db()
-
+    config.PLATFORM = platform
+    config.LOGIN_TYPE = lt
+    config.CRAWLER_TYPE = type
     crawler = CrawlerFactory.create_crawler(platform=platform)
-    crawler.init_config(
-        platform=platform,
-        login_type=lt,
-        crawler_type='',
-        keyword='',
-        start_page=1
-    )
     await add_user_login(crawler)
     if config.SAVE_DATA_OPTION == "db":
         await db.close()

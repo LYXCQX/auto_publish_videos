@@ -83,16 +83,17 @@ def download(dowaloads_file, downloads_video,json_store_path):
                         down_path = f"{config.sub_remove_path}{video['key_word'].replace('视频素材','')}/{datetime.now().strftime('%Y-%m-%d')}"
                         if not os.path.exists(down_path):
                             os.makedirs(down_path)
-                        video_path_tem = f"{config.video_temp}/{video['note_id']}_tmp.mp4"
+                        video_path_tem = f"{config.video_temp}{video['note_id']}_tmp.mp4"
                         video_path = f"{down_path}/{video['note_id']}.mp4"
                         if not os.path.exists(video_path):
                             if video['video_url_none_sy'] != '':
                                 download_video(video['video_url_none_sy'], video_path_tem)
-                                input_stream = ffmpeg.input(video_path_tem)
-                                output_stream = ffmpeg.output(input_stream['v'], input_stream['a'], video_path, c='copy', y='-y')
-                                ffmpeg.run(output_stream)
-                                os.remove(video_path_tem)
                                 downloads_video.append(video['note_id'])
+                                if os.path.exists(video_path_tem):
+                                    input_stream = ffmpeg.input(video_path_tem)
+                                    output_stream = ffmpeg.output(input_stream['v'], input_stream['a'], video_path, c='copy', y='-y')
+                                    ffmpeg.run(output_stream)
+                                    os.remove(video_path_tem)
                 except Exception as e:
                     loguru.logger.error(f"下载视频时发生错误: {e}")
             os.remove(file_patch)
