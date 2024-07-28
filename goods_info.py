@@ -129,10 +129,8 @@ def on_message(message, data):
                     goods_des = f"套餐包含{remove_punctuation(goods_items['title'])}"
                     if goods_items['fromNum'] != goods_items['selectNum']:
                         goods_des += f"{goods_items['fromNum']} 选 {goods_items['selectNum']}\n"
-                    else:
-                        goods_des += f"套餐包含{remove_punctuation(goods_items['title'])}"
                     for meal_contents in goods_items['setMealContents']:
-                        if meal_contents['count']>1:
+                        if meal_contents['count'] > 1:
                             goods_des += f"{remove_punctuation(meal_contents['title'])}|{meal_contents['count']}份\n"
                         else:
                             goods_des += f"{remove_punctuation(meal_contents['title'])}\n"
@@ -143,7 +141,8 @@ def on_message(message, data):
                         print(goods_remark)
                         if goods_remark != '' and '套餐内容' in goods_remark and '套餐内容' != goods_remark:
                             goods_des = goods_remark.split('\n', 1)[0]
-                            goods_des = goods_des.replace('套餐内容：', '套餐包含').replace('套餐内容', '套餐包含').replace('*', '|')
+                            goods_des = goods_des.replace('套餐内容：', '套餐包含').replace('套餐内容',
+                                                                                           '套餐包含').replace('*', '|')
                             print(goods_des)
                 item_title = (goods['itemTitle'].replace('shakeshake（自动发券到小程序）', '')
                               .replace('（自动发券到小程序）', '')
@@ -166,10 +165,12 @@ def on_message(message, data):
     else:
         loguru.logger.info(message)
 
+
 def remove_punctuation(text):
     # 使用正则表达式去除标点符号
     text_without_punctuation = re.sub(r'[^\w\s]', '', text)
     return text_without_punctuation
+
 
 process = frida.get_remote_device()
 
