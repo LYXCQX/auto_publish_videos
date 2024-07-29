@@ -235,15 +235,13 @@ class KuaiShouVideo(object):
 
     async def main(self):
         async with async_playwright() as playwright:
-            # 根据视频生成记录发布视频
-            goods = db.fetchall(
-                "select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 group by vgp.user_id")
-            for good in goods:
+            user_infos = db.fetchall("select * from user_info")
+            for user_info in user_infos:
                 try:
-                    user_infos = db.fetchall(f"select * from user_info where user_id = {good['user_id']}")
-                    # if user_infos['cookies'] == '':
-                    user_info = user_infos[0]
-                    if datetime.now().hour in json.loads(user_info['publish_hours']):
+                    # 根据视频生成记录发布视频
+                    good = db.fetchone(
+                        f"select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 and vgp.user_id = {user_info['user_id']} limit 1")
+                    if datetime.now().hour in json.loads(user_info['publish_hours']) and good is not None:
                         account_file = get_account_file(user_info['user_id'])
                         await kuaishou_setup(account_file, handle=True)
                         await self.upload(playwright, good, user_info, account_file, '')
