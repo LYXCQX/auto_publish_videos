@@ -145,9 +145,9 @@ class KuaiShouVideo(object):
         page = await context.new_page()
         # 访问指定的 URL
         await page.goto("https://cp.kuaishou.com/article/publish/video")
-        loguru.logger.info('[+]正在上传-------{}.mp4'.format(goods['goods_title']))
+        loguru.logger.info('[+]{}正在上传-------{}.mp4'.format(user_info['username'], goods['goods_title']))
         # 等待页面跳转到指定的 URL，没进入，则自动等待到超时
-        loguru.logger.info('[-] 正在打开主页...')
+        loguru.logger.info('[-] {}正在打开主页...'.format(user_info['username']))
         await page.wait_for_url("https://cp.kuaishou.com/article/publish/video")
         await clickUpload(goods, page, ".SOCr7n1uoqI-")
 
@@ -155,14 +155,14 @@ class KuaiShouVideo(object):
         # 检查是否存在包含输入框的元素
         # 这里为了避免页面变化，故使用相对位置定位：作品标题父级右侧第一个元素的input子元素
         await asyncio.sleep(1)
-        loguru.logger.info("  [-] 正在填充标题和话题...")
+        loguru.logger.info("  [-]{} 正在填充标题和话题...".format(user_info['username']))
         await page.locator(".clGhv3UpdEo-").fill(goods['video_title'])
-        loguru.logger.info(goods['tips'].split('#'))
+        loguru.logger.info(f"{user_info['username']}话题{goods['tips'].split('#')}")
         tips = goods['tips'].replace("\r", "").replace('\n', '').strip().split('#')
         tips = random.sample(tips, 4) if len(tips) > 3 else tips
         for tip in tips:
             if tip != '':
-                loguru.logger.info(f"正在添加第{tip}话题")
+                loguru.logger.info(f"{user_info['username']}正在添加第{tip}话题")
                 await page.type(".clGhv3UpdEo-", "#" + tip)
         # 查找按钮
         button = page.get_by_text('我知道了')
@@ -177,29 +177,43 @@ class KuaiShouVideo(object):
                 break
         start_time = time.time()  # 获取开始时间
         while True:
-            # 输入品牌品牌
-            await page.locator('#rc_select_2').fill(goods['brand'])
-            # 等待页面加载并确保元素存在
-            await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
-            # 获取 rc-virtual-list-holder-inner 下的所有 ant-select-item
-            items = await page.query_selector_all('.rc-virtual-list-holder-inner .ant-select-item')
             # 提取并打印每个 item 的 label 属性值
             brand_flag = False
-            for item in items:
-                label_value = await item.get_attribute('label')
-                brand_new = goods['brand'].replace('（', '(')
-                brand_new = brand_new.split('(')[0] if '(' in brand_new else brand_new
-                if brand_new in label_value:
-                    brand_flag = True
-                    await item.click()
+            brand_strs = list(goods['brand'])
+            brand_strs.insert(0,goods['brand'])
+            brand_new = goods['brand'].replace('（', '(')
+            brand_new = brand_new.split('(')[0] if '(' in brand_new else brand_new
+            for index,brand_str in enumerate(brand_strs):
+                # 输入品牌品牌 第一个是店铺地址全称
+                if index ==1:
+                    await page.locator('#rc_select_2').fill('')
+                await page.locator('#rc_select_2').type(brand_str)
+                # 等待页面加载并确保元素存在
+                await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
+                # 获取 rc-virtual-list-holder-inner 下的所有 ant-select-item
+                items = await page.query_selector_all('.rc-virtual-list-holder-inner .ant-select-item')
+                for item in items:
+                    label_value = await item.get_attribute('label')
+                    if goods['brand'] in label_value:
+                        brand_flag = True
+                        await item.click()
+                        break
+                if not brand_flag:
+                    for item in items:
+                        label_value = await item.get_attribute('label')
+                        if brand_new in label_value:
+                            brand_flag = True
+                            await item.click()
+                            break
+                if brand_flag:
                     break
+                await asyncio.sleep(0.5)
             if brand_flag:
                 break
             current_time = time.time()  # 获取当前时间
             elapsed_time = current_time - start_time  # 计算已经过去的时间
             if elapsed_time > 10:  # 如果已经过去的时间超过5秒
                 return  # 退出循环
-            await asyncio.sleep(0.5)
         await video_is_upload(goods, page)
         try:
             await page.locator('.XwacrNGK2pY-').get_by_text('发布').click()
@@ -211,13 +225,13 @@ class KuaiShouVideo(object):
             try:
                 await page.wait_for_url("https://cp.kuaishou.com/article/manage/video?status=2&from=publish",
                                         timeout=15000)  # 如果自动跳转到作品页面，则代表发布成功
-                loguru.logger.info("  [-]视频发布成功")
+                loguru.logger.info("  [-]{}视频发布成功".format(user_info['username']))
                 db.execute(f"update video_goods_publish set state = 2 where id = {goods['id']}")
                 if os.path.exists(goods['video_path']):
                     os.remove(goods['video_path'])
                 break
             except Exception as e:
-                loguru.logger.info(f"  [-] 视频正在发布中...{e}")
+                loguru.logger.info(f"  [-] {user_info['username']}视频正在发布中...{e}")
                 # await page.screenshot(full_page=True)
 
                 await asyncio.sleep(0.5)
@@ -227,26 +241,26 @@ class KuaiShouVideo(object):
                 # 检查按钮是否存在
                 await publish_button.click() if await publish_button.count() > 0 else None
         await context.storage_state(path=account_file)  # 保存cookie
-        loguru.logger.info('  [-]cookie更新完毕！')
+        loguru.logger.info('  [-]cookie更新完毕！'.format(user_info['username']))
         await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
         await context.close()
         await browser.close()
 
     async def main(self):
-        async with async_playwright() as playwright:
-            user_infos = db.fetchall("select * from user_info")
-            for user_info in user_infos:
-                try:
-                    # 根据视频生成记录发布视频
-                    good = db.fetchone(
-                        f"select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 and vgp.user_id = {user_info['user_id']} limit 1")
-                    if datetime.now().hour in json.loads(user_info['publish_hours']) and good is not None:
-                        account_file = get_account_file(user_info['user_id'])
+        user_infos = db.fetchall("select * from user_info")
+        for user_info in user_infos:
+            try:
+                # 根据视频生成记录发布视频
+                good = db.fetchone(
+                    f"select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 and vgp.user_id = {user_info['user_id']} limit 1")
+                if datetime.now().hour in json.loads(user_info['publish_hours']) and good is not None:
+                    account_file = get_account_file(user_info['user_id'])
+                    async with async_playwright() as playwright:
                         await kuaishou_setup(account_file, handle=True)
                         await self.upload(playwright, good, user_info, account_file, '')
-                except Exception as e:
-                    loguru.logger.error(e)
+            except Exception as e:
+                loguru.logger.error(e)
 
 
 if __name__ == '__main__':

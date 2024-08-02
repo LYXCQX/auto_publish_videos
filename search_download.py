@@ -59,7 +59,7 @@ def start_download():
             loguru.logger.info('今天已经爬取过视频路径，不再重新爬取')
         else:
             db = getdb()
-            brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1')
+            brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1 order by id desc')
             keywords = ''
             for brand in brands:
                 brand = brand['brand_base']
@@ -71,8 +71,6 @@ def start_download():
 
 
 def download(dowaloads_file, downloads_video,json_store_path):
-    try:
-
         for file_patch in os.listdir(json_store_path):
             file_patch = json_store_path+file_patch
             videos = json.load(open(file_patch, encoding='utf-8'))
@@ -96,10 +94,11 @@ def download(dowaloads_file, downloads_video,json_store_path):
                                     os.remove(video_path_tem)
                 except Exception as e:
                     loguru.logger.error(f"下载视频时发生错误: {e}")
+                finally:
+                    with open(dowaloads_file, 'w', encoding='utf-8') as file:
+                        json.dump(downloads_video, file, ensure_ascii=False, indent=4)
             os.remove(file_patch)
-    finally:
-        with open(dowaloads_file, 'w', encoding='utf-8') as file:
-            json.dump(downloads_video, file, ensure_ascii=False, indent=4)
+
 
 
 if __name__ == "__main__":

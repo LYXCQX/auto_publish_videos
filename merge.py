@@ -51,6 +51,7 @@ def scheduled_job():
                 if len(use_goods) == 0:
                     use_goods = get_use_good(video_goods, video_goods_publish, 0)
                 random.shuffle(use_goods)
+                user_brands = []
                 for use_good in use_goods:
                     goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
                     use_good['sales_script'] = get_sales_scripts(use_good)
@@ -58,7 +59,9 @@ def scheduled_job():
                     # 相同的平台才能生成对应的视频
                     if user_info['type'] == use_good['type']:
                         if (pub_num < user_info['pub_num']
-                                and use_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]):
+                                and use_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]
+                                and use_good['brand_base'] not in user_brands
+                        ):
                             try:
                                 video_path_list = get_mp4_files_path(f"{config.video_path}{use_good['brand_base']}")
                                 if len(video_path_list) < 1:
@@ -70,6 +73,7 @@ def scheduled_job():
                                             f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
                                             f"VALUES ({use_good['goods_id']},{user_info['user_id']},{use_good['id']},'{video_path}','{use_good['brand']}','{goods_des}',{1})")
                                         pub_num += 1
+                                        user_brands.append(use_good['brand_base'])
                             except Exception as e:
                                 loguru.logger.exception(
                                     f'{user_info["user_id"]} -  商品名称:{use_good["goods_name"]} 商品id:{use_good["id"]}')
