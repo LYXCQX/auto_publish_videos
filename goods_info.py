@@ -147,6 +147,7 @@ def on_message(message, data):
                 item_title = (goods['itemTitle'].replace('shakeshake（自动发券到小程序）', '')
                               .replace('（自动发券到小程序）', '')
                               .replace('【券自动发小程序使用】', ''))
+                item_title = re.sub(r'^\[.*\]$', '', item_title)
                 photo_commission = goods['photoCommission']
                 sale_volume = goods['saleVolume']
                 if item_id in goods_map:

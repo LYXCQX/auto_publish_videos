@@ -66,12 +66,22 @@ async def kuaishou_cookie_gen(account_file):
         await page.goto("https://cp.kuaishou.com/article/publish/video")
         await page.locator('.login').click()
         await page.locator('.platform-switch').click()
+        login_url = page.url
         img_url = await page.locator('.qrcode img').get_attribute('src')
         # 解码 base64 图片
         img_data = base64.b64decode(img_url.replace('data:image/png;base64,', ''))
         img = Image.open(BytesIO(img_data))
         img.save(get_upload_login_path('kuaishou'))
-        await page.wait_for_url('https://cp.kuaishou.com/article/publish/video', timeout=120000)
+        start_time = time.time()
+        while True:
+            if login_url == page.url:
+                await asyncio.sleep(0.5)
+            else:
+                break
+            elapsed_time = time.time() - start_time
+            # 检查是否超过了超时时间
+            if elapsed_time > 60:
+                raise TimeoutError("操作超时，跳出循环")
         await page.goto('https://cp.kuaishou.com/profile')
         await asyncio.sleep(0.5)
         user_id = await get_user_id(page)
@@ -188,6 +198,7 @@ class KuaiShouVideo(object):
                 if index ==1:
                     await page.locator('#rc_select_2').fill('')
                 await page.locator('#rc_select_2').type(brand_str)
+                await asyncio.sleep(0.5)
                 # 等待页面加载并确保元素存在
                 await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
                 # 获取 rc-virtual-list-holder-inner 下的所有 ant-select-item
@@ -207,7 +218,6 @@ class KuaiShouVideo(object):
                             break
                 if brand_flag:
                     break
-                await asyncio.sleep(0.5)
             if brand_flag:
                 break
             current_time = time.time()  # 获取当前时间
