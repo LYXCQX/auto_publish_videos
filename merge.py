@@ -37,7 +37,7 @@ def scheduled_job():
         # 查询需要发布的用户，用来提前生成视频
         user_infos = db.fetchall("select * from user_info")
         # 查询可以发布的商品
-        video_goods = db.fetchall("select * from video_goods group by brand order by id desc ")
+        video_goods = db.fetchall("select * from video_goods where state = 1 order by id desc ")
         # 循环并找出可以生成视频（未到发布条数） 还没生成视频的用户
         for user_info in user_infos:
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")

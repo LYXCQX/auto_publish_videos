@@ -147,7 +147,7 @@ def on_message(message, data):
                 item_title = (goods['itemTitle'].replace('shakeshake（自动发券到小程序）', '')
                               .replace('（自动发券到小程序）', '')
                               .replace('【券自动发小程序使用】', ''))
-                item_title = re.sub(r'^\[.*\]$', '', item_title)
+                item_title = re.sub(r'^.*?】', '', item_title) if item_title.startswith('【') else item_title
                 photo_commission = goods['photoCommission']
                 sale_volume = goods['saleVolume']
                 if item_id in goods_map:
@@ -183,3 +183,7 @@ script.on('message', on_message)
 script.load()
 process.resume(pid)
 sys.stdin.read()
+
+
+# adb forward tcp:27042 tcp:27042
+# adb forward tcp:27043 tcp:27043
