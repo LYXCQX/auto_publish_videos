@@ -5,6 +5,7 @@ import ffmpeg
 import loguru
 from pydub import AudioSegment
 
+from util.number_util import num_to_chinese
 from video_dedup.config_parser import Config
 
 
@@ -80,7 +81,7 @@ def merge_audio_files_with_pause(input_files, output_file, pause_duration_ms=200
 
 def create_audio(text, audio_path, p_voice, p_rate, p_volume, srt_path):
     communicate = edge_tts.Communicate(
-        text=text, voice=p_voice, rate=p_rate, volume=p_volume
+        text=num_to_chinese(text), voice=p_voice, rate=p_rate, volume=p_volume
     )
     sub_maker = CustomSubMaker()
     with open(audio_path, "wb") as file:

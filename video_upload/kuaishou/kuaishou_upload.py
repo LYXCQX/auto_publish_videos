@@ -130,7 +130,7 @@ async def video_is_upload(goods, page):
                 loguru.logger.info("  [-] 正在上传视频中...")
                 await asyncio.sleep(2)
 
-                if await page.locator('上传失败').count():
+                if await page.get_by_text('上传失败').count():
                     loguru.logger.info("  [-] 发现上传出错了...")
                     loguru.logger.info("视频出错了，重新上传中")
                     await clickUpload(goods, page, ".SOCr7n1uoqI-")
@@ -190,12 +190,12 @@ class KuaiShouVideo(object):
             # 提取并打印每个 item 的 label 属性值
             brand_flag = False
             brand_strs = list(goods['brand'])
-            brand_strs.insert(0,goods['brand'])
+            brand_strs.insert(0, goods['brand'])
             brand_new = goods['brand'].replace('（', '(')
             brand_new = brand_new.split('(')[0] if '(' in brand_new else brand_new
-            for index,brand_str in enumerate(brand_strs):
+            for index, brand_str in enumerate(brand_strs):
                 # 输入品牌品牌 第一个是店铺地址全称
-                if index ==1:
+                if index == 1:
                     await page.locator('#rc_select_2').fill('')
                 await page.locator('#rc_select_2').type(brand_str)
                 await asyncio.sleep(0.5)
@@ -205,7 +205,7 @@ class KuaiShouVideo(object):
                 items = await page.query_selector_all('.rc-virtual-list-holder-inner .ant-select-item')
                 for item in items:
                     label_value = await item.get_attribute('label')
-                    if goods['brand'] in label_value:
+                    if goods['brand'] == label_value:
                         brand_flag = True
                         await item.click()
                         break
