@@ -133,7 +133,7 @@ async def video_is_upload(goods, page):
                 if await page.get_by_text('上传失败').count():
                     loguru.logger.info("  [-] 发现上传出错了...")
                     loguru.logger.info("视频出错了，重新上传中")
-                    await clickUpload(goods, page, ".SOCr7n1uoqI-")
+                    await clickUpload(goods, page, ".diPApjTPuXE-")
         except Exception as e:
             loguru.logger.error("  [-] 正在上传视频中...", e)
             await asyncio.sleep(2)

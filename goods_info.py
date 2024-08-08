@@ -112,7 +112,11 @@ def on_message(message, data):
                 loguru.logger.info(f"商品已存在{goods['itemTitle']}")
             else:
                 loguru.logger.info(f"新增商品{goods['itemTitle']}")
-                sale_price = goods['salePrice'] / 100
+                cheapest_sku_promotion = goods['cheapestSkuPromotion']
+                if cheapest_sku_promotion is not None:
+                    sale_price = cheapest_sku_promotion['promotionPrice'] / 100
+                else:
+                    sale_price = goods['salePrice'] / 100
                 market_price = goods['marketPrice'] / 100
                 tips = ''
                 for example_video in goods['exampleVideos']:

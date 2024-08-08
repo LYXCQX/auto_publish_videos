@@ -122,7 +122,7 @@ def get_goods_des(video_good):
         f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
-        f"{video_good['goods_title']}现在价格超值，,{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久,{random.choice(config.center_sales)}",
+        f"{video_good['goods_title']}现在价格超值，{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久,{random.choice(config.center_sales)}",
         f"{real_price}就可以享受到{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}"]
@@ -130,11 +130,10 @@ def get_goods_des(video_good):
 
 
 def get_good_des_ran(goods_des):
-    goods_des = goods_des if goods_des is not None else ''
+    goods_des = f'{goods_des},' if goods_des is not None and goods_des != '' else ''
     goods_des_s = [
-        f'{goods_des},',
+        goods_des,
         '',
-        f'{goods_des},'
     ]
 
     return random.choice(goods_des_s)
@@ -185,8 +184,9 @@ def get_brand_no_kh(brand):
 
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分
-
-    if int_part < 20:
+    if int_part < 1:
+        return f"不到{int_part+1}块"
+    elif int_part < 20:
         return f"{int_part}块多"
     else:
         str_amount = str(int_part)
