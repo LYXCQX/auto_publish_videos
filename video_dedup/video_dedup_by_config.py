@@ -63,7 +63,10 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         video_stream = add_watermark(video_stream, config, config.watermark_text,
                                      watermark_type=config.watermark_type,
                                      direction=config.watermark_direction, duration=video_duration)
-
+        # 商品购买界面
+        goods_info_image_path = f"{config.goods_info_watermark_image_path}{good['brand_base']}/{good['goods_name']}.png"
+        if os.path.isfile(goods_info_image_path):
+            video_stream = add_img_goods(goods_info_image_path, video_stream, 430, 240)
         # bgm_path = '/Users/zhonghao/PycharmProjects/video_ai/demo/bgm_silient.m4a'
         if config.bgm_audio_path != '':
             loguru.logger.info('config.bgm_audio_path -> ', config.bgm_audio_path)

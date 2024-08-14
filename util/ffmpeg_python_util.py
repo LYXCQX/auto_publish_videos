@@ -178,6 +178,13 @@ def add_img_sy(watermark_image_path, input_stream, x, y):
     return input_stream
 
 
+def add_img_goods(watermark_image_path, input_stream, x, y):
+    watermark_stream = ffmpeg.input(watermark_image_path, loop=1)
+    watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
+    input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1)
+    return input_stream
+
+
 def add_blurred_background(input_stream, output_video_tmp, width, height, top_percent=5, bottom_percent=5, y_percent=5,
                            target_width=720,
                            target_height=1280):
@@ -202,18 +209,18 @@ def add_blurred_background(input_stream, output_video_tmp, width, height, top_pe
 
 
 def add_title(input_stream, config, title, line_num=10, title_position='top', title_gap=5):
-    fontfile=get_font_file(config)
+    fontfile = get_font_file(config)
     if title:
         fontsize = config.top_title_size
         title_x = 'w/2-text_w/2'
         if title_position == 'top':
             title_y = f'h*{title_gap}/100'
-            input_stream = draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile,'orange')
+            input_stream = draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile, 'orange')
         else:
             title_y = f'h-h*{title_gap}/100-text_h'
             fontsize = config.bottom_title_size
             for txt in title.split('\n'):
-                input_stream = draw_text(config, fontsize, input_stream, txt, title_x, title_y, fontfile,'white')
+                input_stream = draw_text(config, fontsize, input_stream, txt, title_x, title_y, fontfile, 'white')
                 title_y += '+80'
                 loguru.logger.info(title_y)
 
@@ -229,7 +236,7 @@ def add_title(input_stream, config, title, line_num=10, title_position='top', ti
     return input_stream
 
 
-def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile,fontcolor):
+def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile, fontcolor):
     input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
                                          shadowcolor='black', shadowx=4, shadowy=4,
                                          fontfile=fontfile,
@@ -358,5 +365,6 @@ def add_subtitles(video_stream, subtitle_path, config: Config):
                                  )
     return output
 
-def get_font_file(config:Config):
+
+def get_font_file(config: Config):
     return random.choice(config.font_path)

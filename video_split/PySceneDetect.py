@@ -1,3 +1,4 @@
+import os
 import subprocess
 from pathlib import Path
 
@@ -12,6 +13,8 @@ def split_video_into_scenes(video_path, output_path, threshold=27.0):
     scene_manager.add_detector(ContentDetector(threshold=threshold))
     scene_manager.detect_scenes(video, show_progress=True)
     scene_list = scene_manager.get_scene_list(start_in_scene=True)
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
     if len(scene_list) > 1:
         split_video_ffmpeg(video_path, scene_list, output_path, '$VIDEO_NAME-$SCENE_NUMBER.mp4',
                            arg_override='-map 0:v -c:v libx264 -preset veryfast -crf 22',

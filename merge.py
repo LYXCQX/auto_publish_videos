@@ -2,7 +2,7 @@ import argparse
 import random
 import re
 from datetime import datetime
-
+import pandas as pd
 import loguru
 from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock, Timeout
@@ -50,7 +50,6 @@ def scheduled_job():
                 use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
                 if len(use_goods) == 0:
                     use_goods = get_use_good(video_goods, video_goods_publish, 0)
-                random.shuffle(use_goods)
                 user_brands = []
                 for use_good in use_goods:
                     goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
@@ -110,6 +109,14 @@ def get_use_good(video_goods, video_goods_publish, video_type):
             use_goods = []
         else:
             use_goods = video_goods
+    # 将数据转换为 DataFrame
+    df = pd.DataFrame(use_goods)
+    # 随机打乱行的顺序
+    df_shuffled = df.sample(frac=1).reset_index(drop=True)
+    # 使用 drop_duplicates 方法去重
+    df_unique = df_shuffled.drop_duplicates(subset='brand_base')
+    # 将去重后的 DataFrame 转换回字典列表
+    result = df_unique.to_dict(orient='records')
     return use_goods
 
 

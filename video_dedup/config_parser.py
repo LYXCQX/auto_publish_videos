@@ -24,6 +24,7 @@ class Config:
         self.watermark_direction = 'right-top-to-bottom'
         self.watermark_image_path = ''
         self.dz_watermark_image_path = ''
+        self.goods_info_watermark_image_path = ''
         self.watermark_video_path = ''
         self.bgm_audio_path: list = []
         self.srt_duration = 99999
@@ -115,6 +116,7 @@ def read_dedup_config():
     config.watermark_direction = parser.get('dedup_step', 'watermark_direction')
     config.watermark_image_path = get_img_files(parser.get('dedup_step', 'watermark_image_path'))
     config.dz_watermark_image_path = get_img_files(parser.get('dedup_step', 'dz_watermark_image_path'))
+    config.goods_info_watermark_image_path = parser.get('dedup_step', 'goods_info_watermark_image_path')
     config.watermark_video_path = get_img_files(parser.get('dedup_step', 'watermark_video_path'))
     config.bgm_audio_path = get_audio_files(parser.get('dedup_step', 'bgm_audio_path'))
     config.srt_duration = parser.getfloat('dedup_step', 'srt_duration')
