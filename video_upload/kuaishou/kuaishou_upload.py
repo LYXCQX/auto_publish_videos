@@ -21,8 +21,16 @@ from util.file_util import get_account_file, download_video, get_upload_login_pa
 
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 db = getdb()
-
-
+#上传视频按钮
+update_class_list = ['.SOCr7n1uoqI-', '._upload-btn_1kfpp_68']
+#描述信息
+detail_class_list = ['.clGhv3UpdEo-', '._description_36dct_62']
+#位置信息，定位后显示的城市标签
+position_class_list = ['.uUoMPMIW8HY-', '._position-tips_36dct_318']
+#重新上传按钮
+reupload_class_list = ['.diPApjTPuXE-', '._reupload_teo17_31']
+# 发布按钮
+publish_class_list = ['.XwacrNGK2pY-', '._footer_9braw_95']
 async def cookie_auth(account_file):
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -32,13 +40,28 @@ async def cookie_auth(account_file):
         # 访问指定的 URL
         await page.goto("https://cp.kuaishou.com/article/publish/video")
         try:
-            await page.wait_for_selector(".SOCr7n1uoqI-", timeout=20000)  # 等待5秒
+            await page.wait_for_selector(await get_use_class(page,update_class_list), timeout=20000)  # 等待5秒
             loguru.logger.info("[+] cookie 有效")
             return True
         except Exception as e:
             loguru.logger.info("Error initializing browser:", str(e))
             loguru.logger.info("[+] 等待5秒 cookie 失效")
             return False
+
+
+#获取不同的class名称
+async def get_use_class(page, class_list):
+    await page.wait_for_load_state('networkidle')
+    res_clas=None
+    # 检查页面是否存在具有指定 class 的元素
+    for clas in class_list:
+        element = await page.query_selector(clas)
+        exists = element is not None
+        if exists:
+            res_clas = clas
+    if res_clas is None:
+        loguru.logger.info(f'没有找到可用的class，请查看后重新添加{await page.content()}')
+    return res_clas
 
 
 async def kuaishou_setup(account_file, handle=False):
@@ -120,6 +143,7 @@ async def clickUpload(goods, page, css):
 
 
 async def video_is_upload(goods, page):
+    start_time = time.time()  # 获取开始时间
     while True:
         try:
             number = await page.get_by_text('上传成功').count()
@@ -133,7 +157,11 @@ async def video_is_upload(goods, page):
                 if await page.get_by_text('上传失败').count():
                     loguru.logger.info("  [-] 发现上传出错了...")
                     loguru.logger.info("视频出错了，重新上传中")
-                    await clickUpload(goods, page, ".diPApjTPuXE-")
+                    await clickUpload(goods, page, get_use_class(page, reupload_class_list))
+            current_time = time.time()  # 获取当前时间
+            elapsed_time = current_time - start_time  # 计算已经过去的时间
+            if elapsed_time > 10 * 60:  # 如果已经过去的时间超过10分钟
+                return  # 退出循环
         except Exception as e:
             loguru.logger.error("  [-] 正在上传视频中...", e)
             await asyncio.sleep(2)
@@ -159,30 +187,31 @@ class KuaiShouVideo(object):
         # 等待页面跳转到指定的 URL，没进入，则自动等待到超时
         loguru.logger.info('[-] {}正在打开主页...'.format(user_info['username']))
         await page.wait_for_url("https://cp.kuaishou.com/article/publish/video")
-        await clickUpload(goods, page, ".SOCr7n1uoqI-")
+        await clickUpload(goods, page, await get_use_class(page, update_class_list))
 
         # 填充标题和话题
         # 检查是否存在包含输入框的元素
         # 这里为了避免页面变化，故使用相对位置定位：作品标题父级右侧第一个元素的input子元素
         await asyncio.sleep(1)
+        # 查找按钮
+        button = page.get_by_text('我知道了')
+        # 检查按钮是否存在
+        await button.click() if await button.count() > 0 else None
         loguru.logger.info("  [-]{} 正在填充标题和话题...".format(user_info['username']))
-        await page.locator(".clGhv3UpdEo-").fill(goods['video_title'])
+        detail_class = await get_use_class(page, detail_class_list)
+        await page.locator(detail_class).fill(goods['video_title'])
         loguru.logger.info(f"{user_info['username']}话题{goods['tips'].split('#')}")
         tips = goods['tips'].replace("\r", "").replace('\n', '').strip().split('#')
         tips = random.sample(tips, 4) if len(tips) > 3 else tips
         for tip in tips:
             if tip != '':
                 loguru.logger.info(f"{user_info['username']}正在添加第{tip}话题")
-                await page.type(".clGhv3UpdEo-", "#" + tip)
-        # 查找按钮
-        button = page.get_by_text('我知道了')
-        # 检查按钮是否存在
-        await button.click() if await button.count() > 0 else None
+                await page.type(detail_class, "#" + tip)
         await page.get_by_text('不允许下载此作品').locator('..').locator('.ant-checkbox').click()
         await page.get_by_text('当前地点').locator('..').locator('.ant-radio').click()
         # 授权位置
         while True:
-            pp_bl = await page.locator('.uUoMPMIW8HY-').is_visible()
+            pp_bl = await page.locator(await get_use_class(page, position_class_list)).is_visible()
             if pp_bl:
                 break
         start_time = time.time()  # 获取开始时间
@@ -226,7 +255,7 @@ class KuaiShouVideo(object):
                 return  # 退出循环
         await video_is_upload(goods, page)
         try:
-            await page.locator('.XwacrNGK2pY-').get_by_text('发布').click()
+            await page.locator(await get_use_class(page, publish_class_list)).get_by_text('发布').click()
         except Exception as e:
             loguru.logger.error(f"{goods['goods_name']}上传快手发现上传出错了...{goods['id']}{e}")
         # 判断视频是否发布成功
@@ -239,6 +268,8 @@ class KuaiShouVideo(object):
                 db.execute(f"update video_goods_publish set state = 2 where id = {goods['id']}")
                 if os.path.exists(goods['video_path']):
                     os.remove(goods['video_path'])
+                await context.storage_state(path=account_file)  # 保存cookie
+                loguru.logger.info('  [-]cookie更新完毕！'.format(user_info['username']))
                 break
             except Exception as e:
                 loguru.logger.info(f"  [-] {user_info['username']}视频正在发布中...{e}")
@@ -247,12 +278,9 @@ class KuaiShouVideo(object):
                 await asyncio.sleep(0.5)
                 await page.screenshot(path=f'imgs/{uuid.uuid4()}.png')
                 # 查找按钮
-                publish_button = page.locator('.XwacrNGK2pY-').get_by_text('发布')
+                publish_button = page.locator(await get_use_class(page, publish_class_list)).get_by_text('发布')
                 # 检查按钮是否存在
                 await publish_button.click() if await publish_button.count() > 0 else None
-        await context.storage_state(path=account_file)  # 保存cookie
-        loguru.logger.info('  [-]cookie更新完毕！'.format(user_info['username']))
-        await asyncio.sleep(2)  # 这里延迟是为了方便眼睛直观的观看
         # 关闭浏览器上下文和浏览器实例
         await context.close()
         await browser.close()

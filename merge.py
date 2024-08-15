@@ -2,12 +2,12 @@ import argparse
 import random
 import re
 from datetime import datetime
-import pandas as pd
+
 import loguru
+import pandas as pd
 from apscheduler.schedulers.blocking import BlockingScheduler
 from filelock import FileLock, Timeout
 
-from util.audio_util import wrap_text
 from util.db.sql_utils import getdb
 from util.file_util import get_mp4_files_path
 from video_dedup.config_parser import read_dedup_config
@@ -47,6 +47,9 @@ def scheduled_job():
                 video_goods_publish_his = db.fetchall(
                     f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]}')
                 pub_num = len(video_goods_publish)
+                loguru.logger.info(f'{user_info["username"]} 需要合并 {user_info["pub_num"]} 已经合并 {pub_num}')
+                if pub_num > user_info['pub_num']:
+                    break
                 use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
                 if len(use_goods) == 0:
                     use_goods = get_use_good(video_goods, video_goods_publish, 0)
@@ -91,10 +94,13 @@ def get_use_good(video_goods, video_goods_publish, video_type):
         pub_brand.append(vg_p['brand_base'])
     no_brand = []
     no_id = []
+    hot_goods = []
     for video_good in video_goods:
         video_path_list = get_mp4_files_path(f"{config.video_path}{video_good['brand_base']}")
         if len(video_path_list) > 1:
-            if video_good['brand_base'] not in pub_brand:
+            if video_good['hot_score'] > config.hot_score:
+                hot_goods.append(video_good)
+            elif video_good['brand_base'] not in pub_brand:
                 no_brand.append(video_good)
             elif video_good['id'] not in pub_ids:
                 no_id.append(video_good)
@@ -116,8 +122,7 @@ def get_use_good(video_goods, video_goods_publish, video_type):
     # 使用 drop_duplicates 方法去重
     df_unique = df_shuffled.drop_duplicates(subset='brand_base')
     # 将去重后的 DataFrame 转换回字典列表
-    result = df_unique.to_dict(orient='records')
-    return use_goods
+    return hot_goods + df_unique.to_dict(orient='records')
 
 
 def get_goods_des(video_good):
@@ -192,7 +197,7 @@ def get_brand_no_kh(brand):
 def convert_amount(amount):
     int_part = int(amount)  # 获取整数部分
     if int_part < 1:
-        return f"不到{int_part+1}块"
+        return f"不到{int_part + 1}块"
     elif int_part < 20:
         return f"{int_part}块多"
     else:

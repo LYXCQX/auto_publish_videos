@@ -79,6 +79,7 @@ class Config:
         self.underline = ''
         self.BackColour = ''
         self.Shadow = ''
+        self.hot_score = 1000
 
 
 def read_dedup_config():
@@ -161,5 +162,7 @@ def read_dedup_config():
 
     config.need_split_path = parser.get('video_split', 'need_split_path')
     config.sub_remove_path = parser.get('video_split', 'sub_remove_path')
+
+    config.hot_score = parser.getint('merge_step', 'hot_score')
 
     return config
