@@ -7,6 +7,7 @@ from util.file_util import get_audio_files, get_img_files, get_font_files
 class Config:
     def __init__(self):
         self.save_path = ''
+        self.live_path = ''
         self.video_path = ''
         self.remove_finish = False
         self.reverse_angle = 0
@@ -27,6 +28,7 @@ class Config:
         self.goods_info_watermark_image_path = ''
         self.watermark_video_path = ''
         self.bgm_audio_path: list = []
+        self.live_bgm_audio_path: list = []
         self.srt_duration = 99999
         self.srt_font_color = 'yellow'
         self.blur_background = False
@@ -92,6 +94,7 @@ def read_dedup_config():
     config.hzh_video_path = parser.get('dedup_step', 'hzh_video_path')
 
     config.save_path = parser.get('save_path', 'save_path')
+    config.live_path = parser.get('save_path', 'live_path')
     config.video_path = parser.get('video_path', 'video_path')
     config.external_dedup_video_path = parser.get('video_path', 'external_dedup_video_path')
     config.video_temp = parser.get('video_path', 'video_temp')
@@ -120,6 +123,7 @@ def read_dedup_config():
     config.goods_info_watermark_image_path = parser.get('dedup_step', 'goods_info_watermark_image_path')
     config.watermark_video_path = get_img_files(parser.get('dedup_step', 'watermark_video_path'))
     config.bgm_audio_path = get_audio_files(parser.get('dedup_step', 'bgm_audio_path'))
+    config.live_bgm_audio_path = get_audio_files(parser.get('dedup_step', 'live_bgm_audio_path'))
     config.srt_duration = parser.getfloat('dedup_step', 'srt_duration')
     config.srt_font_color = random.choice(eval(parser.get('dedup_step', 'srt_font_color')))
     config.blur_background = parser.getboolean('dedup_step', 'blur_background')
@@ -145,7 +149,7 @@ def read_dedup_config():
     config.enable_edge_blur = parser.getboolean('dedup_step', 'enable_edge_blur')
     config.data = parser.get('dedup_step', 'data')
     config.max_sec = parser.get('dedup_step', 'max_sec')
-    config.fps = parser.get('dedup_step', 'fps')
+    config.fps = parser.getint('dedup_step', 'fps')
     config.role = eval(parser.get('dedup_step', 'role'))
     config.rate = parser.get('dedup_step', 'rate')
     config.volume = parser.get('dedup_step', 'volume')

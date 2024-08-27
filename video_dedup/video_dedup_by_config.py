@@ -30,7 +30,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         loguru.logger.info(f'音频时间{audio_duration}')
         max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
         # 按照配置合并视频
-        input_video = merge_video(config, good, max_sec)
+        input_video = merge_video(config, good, max_sec,None)
         if input_video is None:
             return
 

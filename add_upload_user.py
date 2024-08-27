@@ -52,7 +52,7 @@ def add_user(platform, login_type, phone_number=None, verification_code=None):
 # 获取图片的模拟函数
 def get_image(platform):
     if os.path.exists(get_upload_login_path(platform)):
-        return f"http://49.232.31.208/img/upload/{platform}_{request.remote_addr}_login.png"
+        return f"E:\opt\img/upload/{platform}_{request.remote_addr}_login.png"
     else:
         return None
 

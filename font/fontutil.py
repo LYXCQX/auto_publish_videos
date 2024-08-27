@@ -30,7 +30,7 @@ def rename_files_to_pinyin(folder_path):
 
 
 if __name__ == '__main__':
-    folder_path = 'D:\IDEA\workspace\\auto_publish_videos\\font'  # 替换为你的文件夹路径
+    folder_path = 'E:\IDEA\workspace\\auto_publish_videos\\font'  # 替换为你的文件夹路径
     rename_files_to_pinyin(folder_path)
 
 

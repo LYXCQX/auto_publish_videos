@@ -26,59 +26,9 @@ def get_video_info(video_path_list, max_sec) -> List[VideoInfo]:
         total_seconds = total_frames / fps
         loguru.logger.debug(f'正在获取视频信息[{video_path}]')
         video_info_list.append(VideoInfo(video_path, fps, total_frames, width, height, total_seconds))
-        if last_sec + total_seconds > float(max_sec):
-            return video_info_list
         last_sec += total_seconds
-        continue
-        # # 先判断是否有黑边(获取视频中随机的10帧)
-        # random_frames = random.sample(range(total_frames), 10 if total_frames > 10 else total_frames)
-        # is_black = False
-        # for i in random_frames:
-        #     video.set(cv2.CAP_PROP_POS_FRAMES, i)
-        #     ret, frame = video.read()
-        #     if not ret:
-        #         break
-        # if not is_black:
-        #     video_info_list.append(VideoInfo(video_path, fps, total_frames, width, height, total_seconds))
-        #     video.release()
-        #     continue
-        #
-        # # 如果有黑边则需要获取主体区域坐标(只获取部分百比分帧)
-        # sample_frames = int(total_frames * sample_rate)
-        # # 计算每次需要跳过的帧数
-        # skip_frames = total_frames // sample_frames if sample_frames else 0
-        #
-        # coordinates = []
-        # for i in range(0, total_frames, skip_frames):
-        #     video.set(cv2.CAP_PROP_POS_FRAMES, i)
-        #     ret, frame = video.read()
-        #
-        #     # 获取进度条增加的数量
-        #     if not ret:
-        #         break
-        #     # Use BlackRemover to get the coordinates of the frame without black borders
-        #
-        # video.release()
-        #
-        # # Get the most common coordinates
-        # most_common_coordinates = Counter(coordinates).most_common(1)[0][0]
-        #
-        # # 把坐标转化成x, y, w, h
-        # most_common_coordinates = (
-        #     most_common_coordinates[0],
-        #     most_common_coordinates[1],
-        #     most_common_coordinates[2] - most_common_coordinates[0],
-        #     most_common_coordinates[3] - most_common_coordinates[1]
-        # )
-        #
-        # x, y, w, h = most_common_coordinates
-        #
-        # # 如果视频是横向的，且宽度小于高度，或者视频是纵向的，且宽度大于高度，则交换宽高
-        # if ((orientation == Orientation.HORIZONTAL and w < h)
-        #         or (orientation == Orientation.VERTICAL and w > h)):
-        #     most_common_coordinates = (x, y, h, w)
-        # video_info_list.append(
-        #     VideoInfo(video_path, fps, total_frames, width, height, total_seconds, CropInfo(*most_common_coordinates)))
+        if last_sec > float(max_sec):
+            return video_info_list
     return video_info_list
 
 

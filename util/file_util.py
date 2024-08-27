@@ -105,7 +105,7 @@ def get_mp4_files_path(folder_path):
     mp4_files = []
     for root, dirs, files in os.walk(folder_path):
         for file in files:
-            if file.endswith(tuple(".mp4")) or file.endswith(tuple(".MOV")):
+            if file.endswith(tuple(".mp4")) or file.endswith(tuple(".MOV")) or file.endswith(tuple(".MP4")) or file.endswith(tuple(".mov")):
                 path = os.path.join(root, file)
                 mp4_files.append(path)
     return mp4_files

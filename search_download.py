@@ -68,9 +68,11 @@ def start_download():
         else:
             brands = db.fetchall('select distinct(brand_base) from video_goods where state = 1 order by id desc')
         keywords = ''
+        folders = [name for name in os.listdir(config.video_path)
+                   if os.path.isdir(os.path.join(config.video_path, name))]
         for brand in brands:
             brand_base = f'{brand["brand_base"]}视频素材'
-            if brand_base not in key_words:
+            if brand_base not in key_words and brand["brand_base"] not in folders:
                 keywords += f'{brand_base},'
         if len(keywords) > 0:
             asyncio.get_event_loop().run_until_complete(run_crawler_with_args(platform, lt, type, start, keywords))

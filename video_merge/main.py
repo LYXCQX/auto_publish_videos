@@ -23,9 +23,10 @@ horizontal_rotation: Rotation = Rotation.CLOCKWISE
 vertical_rotation: Rotation = Rotation.CLOCKWISE
 
 
-def merge_video(config: Config, good: VideoGoods, max_sec):
+def merge_video(config: Config, good: VideoGoods, max_sec, video_paths):
     start_time: float = time.time()
-    video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand_base']}")
+    video_path_list = get_mp4_files_path(
+        f"{config.video_path}{good['brand_base']}" if video_paths is None else video_paths)
     if len(video_path_list) < 1:
         loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
         return
@@ -43,7 +44,8 @@ def merge_video(config: Config, good: VideoGoods, max_sec):
     loguru.logger.info(f'视频拼接:最佳分辨率为{best_width}x{best_height}')
     output_file_path = f"{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp4"
     # 开始对视频依次执行[剪裁],[旋转],[缩放],[帧同步],[拼接]操作
-    output_video = cv2.VideoWriter(output_file_path, cv2.VideoWriter.fourcc(*'mp4v'), int(config.fps), (best_width, best_height))
+    output_video = cv2.VideoWriter(output_file_path, cv2.VideoWriter.fourcc(*'mp4v'), int(config.fps),
+                                   (best_width, best_height))
     for video_info in video_info_list:
         video = cv2.VideoCapture(str(video_info.video_path))
         fps = int(video.get(cv2.CAP_PROP_FPS))
@@ -51,7 +53,7 @@ def merge_video(config: Config, good: VideoGoods, max_sec):
         height = video.get(cv2.CAP_PROP_FRAME_HEIGHT)
         total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
         total_seconds = video_info.total_seconds
-        target_total_frames = int(total_seconds * fps)
+        target_total_frames = int(total_seconds * config.fps)
         current_frame_index = 0
 
         # 设置进度条
@@ -59,23 +61,24 @@ def merge_video(config: Config, good: VideoGoods, max_sec):
         loguru.logger.debug(f'当前视频时长为{total_seconds}s, 目标视频时长为{target_total_frames / fps}s')
 
         # 平滑抽帧或者平滑插值
-        is_distribute: bool = fps > fps
-        is_interpolate: bool = fps < fps
+        is_distribute: bool = fps > config.fps
+        is_interpolate: bool = fps < config.fps
         frame_index_list: list[int] = []
 
-        if is_distribute:
-            frame_index_list = evenly_distribute_numbers(total_frames, target_total_frames)
-            loguru.logger.warning(f'视频拼接:视频帧率为{fps}, 目标帧率为{fps}, 采用平滑抽帧')
-        elif is_interpolate:
+        # if is_distribute:
+        #     frame_index_list = evenly_distribute_numbers(total_frames, target_total_frames)
+        #     loguru.logger.warning(f'视频拼接:视频帧率为{fps}, 目标帧率为{fps}, 采用平滑抽帧')
+        # el
+        if is_interpolate:
             # frame_index_list = evenly_interpolate_numbers(fps, fps)
+            loguru.logger.warning(f'视频拼接:视频帧率为{total_frames}, 目标帧率为{target_total_frames}, 采用平滑插帧')
             frame_index_list = evenly_interpolate_numbers(total_frames, target_total_frames)
-            loguru.logger.warning(f'视频拼接:视频帧率为{fps}, 目标帧率为{fps}, 采用平滑插帧')
 
         while True:
             # 如果当前的 fps 大于目标 fps, 则需要continue跳过一些帧
-            if is_distribute and current_frame_index not in frame_index_list:
-                current_frame_index += 1
-                continue
+            # if is_distribute and current_frame_index not in frame_index_list:
+            #     current_frame_index += 1
+            #     continue
 
             ret, frame = video.read()
             if not ret:

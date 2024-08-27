@@ -5,7 +5,7 @@ from flask import Flask, jsonify, request, send_from_directory, render_template
 app = Flask(__name__)
 
 BASE_DIRS = {
-    '视频': '/opt/software/auto_publish_videos/video/',
+    '视频': 'E:\IDEA\workspace/auto_publish_videos/video',
     '登录图片': '/opt/img/',
 }
 

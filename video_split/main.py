@@ -38,4 +38,4 @@ if __name__ == '__main__':
     #              "D:/IDEA/workspace//auto_publish_videos//video/source//")
     split_video("D:/IDEA/workspace/auto_publish_videos/video/download/",
                 "D:/IDEA/workspace/auto_publish_videos/video/source/")
-    # split_video("D:\IDEA\workspace\\auto_publish_videos\\video\source\\tes")
+    # split_video("E:\IDEA\workspace\\auto_publish_videos\\video\source\\tes")

@@ -43,16 +43,20 @@ def scheduled_job():
             loguru.logger.info(f"合并视频有{len(user_infos)}用户需要处理")
             try:
                 video_goods_publish = db.fetchall(
-                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]} and DATE(vgp.create_time) = CURDATE()')
+                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]}  and  vg.state =1 and DATE(vgp.create_time) = CURDATE()')
                 video_goods_publish_his = db.fetchall(
-                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]}')
+                    f'select vg.brand_base,vgp.vg_id from video_goods_publish vgp left join video_goods vg on vgp.vg_id=vg.id where user_id = {user_info["user_id"]} and  vg.state =1')
                 pub_num = len(video_goods_publish)
+                if len(video_goods_publish) == 0:
+                    video_goods_publish = []
                 loguru.logger.info(f'{user_info["username"]} 需要合并 {user_info["pub_num"]} 已经合并 {pub_num}')
                 if pub_num > user_info['pub_num']:
                     break
-                use_goods = get_use_good(video_goods, video_goods_publish_his, 1)
+                use_goods, hot_goods = get_use_good(video_goods, video_goods_publish_his, 1)
                 if len(use_goods) == 0:
-                    use_goods = get_use_good(video_goods, video_goods_publish, 0)
+                    use_goods, hot_goods = get_use_good(video_goods, video_goods_publish, 0)
+                # 将热门数据放队伍最前边
+                use_goods = hot_goods + use_goods
                 user_brands = []
                 for use_good in use_goods:
                     goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
@@ -69,13 +73,18 @@ def scheduled_job():
                                 if len(video_path_list) < 1:
                                     loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
                                 else:
+                                    now_goods = {'brand_base': use_good['brand_base'], 'vg_id': use_good['id']}
+                                    user_brands.append(use_good['brand_base'])
+                                    video_goods_publish.append(now_goods)
                                     video_path = process_dedup_by_config(config, use_good, goods_des)
                                     if video_path is not None:
                                         db.execute(
                                             f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
                                             f"VALUES ({use_good['goods_id']},{user_info['user_id']},{use_good['id']},'{video_path}','{use_good['brand']}','{goods_des}',{1})")
                                         pub_num += 1
-                                        user_brands.append(use_good['brand_base'])
+                                    else:
+                                        user_brands.remove(use_good['brand_base'])
+                                        video_goods_publish.remove(now_goods)
                             except Exception as e:
                                 loguru.logger.exception(
                                     f'{user_info["user_id"]} -  商品名称:{use_good["goods_name"]} 商品id:{use_good["id"]}')
@@ -122,7 +131,7 @@ def get_use_good(video_goods, video_goods_publish, video_type):
     # 使用 drop_duplicates 方法去重
     df_unique = df_shuffled.drop_duplicates(subset='brand_base')
     # 将去重后的 DataFrame 转换回字典列表
-    return hot_goods + df_unique.to_dict(orient='records')
+    return df_unique.to_dict(orient='records'), hot_goods
 
 
 def get_goods_des(video_good):

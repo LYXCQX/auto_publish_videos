@@ -157,7 +157,7 @@ async def video_is_upload(goods, page):
                 if await page.get_by_text('上传失败').count():
                     loguru.logger.info("  [-] 发现上传出错了...")
                     loguru.logger.info("视频出错了，重新上传中")
-                    await clickUpload(goods, page, get_use_class(page, reupload_class_list))
+                    await clickUpload(goods, page, await get_use_class(page, reupload_class_list))
             current_time = time.time()  # 获取当前时间
             elapsed_time = current_time - start_time  # 计算已经过去的时间
             if elapsed_time > 10 * 60:  # 如果已经过去的时间超过10分钟
@@ -225,8 +225,9 @@ class KuaiShouVideo(object):
             for index, brand_str in enumerate(brand_strs):
                 # 输入品牌品牌 第一个是店铺地址全称
                 if index == 1:
-                    await page.locator('#rc_select_2').fill('')
-                await page.locator('#rc_select_2').type(brand_str)
+                    await page.locator('#rc_select_3').fill('')
+                    await asyncio.sleep(0.5)
+                await page.locator('#rc_select_3').type(brand_str)
                 await asyncio.sleep(0.5)
                 # 等待页面加载并确保元素存在
                 await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
