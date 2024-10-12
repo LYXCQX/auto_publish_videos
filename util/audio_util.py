@@ -1,13 +1,17 @@
 import re
+from time import sleep
 
 import edge_tts
 import ffmpeg
 import loguru
+import pygame
 from pydub import AudioSegment
 
 from util.number_util import num_to_chinese
 from video_dedup.config_parser import Config
-
+from pycaw.pycaw import AudioUtilities, IAudioEndpointVolume
+from ctypes import cast, POINTER
+from comtypes import CLSCTX_ALL
 
 def merge_and_adjust_volumes(origin_audio, bgm_audio, max_sec, volume_a=1.5, volume_b=0.1):
     # 获取音频a的时长
@@ -182,6 +186,35 @@ def wrap_text(text, width):
         wrapped_text += current_line.strip()
     return wrapped_text
 
+
+# 系统播放音频通过麦克风输出 使用VB-CABLE
+def audio_to_microphone(file_path: str):
+    set_volume('Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)', 0)
+    device = 'CABLE Input (VB-Audio Virtual Cable)'
+    print("Play: {}\r\nDevice: {}".format(file_path, device))
+    pygame.mixer.init(devicename=device)
+    pygame.mixer.music.load(file_path)
+    pygame.mixer.music.play()
+    duration = get_audio_duration(file_path)
+    sleep(duration)
+    pygame.mixer.quit()
+    set_volume('Voicemeeter AUX Input (VB-Audio Voicemeeter VAIO)', 1)
+
+# 设置扬声器声音
+def set_volume(device_name, level):
+    # 获取所有音频设备
+    devices = AudioUtilities.GetAllDevices()
+    for device in devices:
+        # 查找指定名称的设备
+        if device.FriendlyName == device_name:
+            endpoint_volume = device.EndpointVolume
+            endpoint_volume.SetMasterVolumeLevelScalar(level, None)
+            return
+    print(f"设备 '{device_name}' 未找到")
+def get_audio_duration(file_path):
+    audio = AudioSegment.from_file(file_path)
+    duration_in_seconds = len(audio) / 1000  # Преобразование миллисекунд в секунды
+    return duration_in_seconds
 
 if __name__ == "__main__":
     text = '【龙虾到家-六斤龙虾】敞开吃(六斤小龙虾含配菜)，多种口味可选，蒜香，麻辣，原价328.04，仅需94，外卖到家，坐等开吃'

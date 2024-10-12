@@ -94,7 +94,7 @@
     let allSelected = false;
 
     function loadFiles() {
-        fetch('/video/files')
+        fetch('/files')
             .then(response => response.json())
             .then(data => {
                 const foldersContainer = document.getElementById('folders');
@@ -169,7 +169,7 @@
                     let mediaElement;
                     if (file.endsWith('.mp4') || file.endsWith('.avi')) {
                         mediaElement = document.createElement('video');
-                        mediaElement.dataset.src = `/video/media/${parentPath}/${file}`;
+                        mediaElement.dataset.src = `/media/${parentPath}/${file}`;
                         mediaElement.controls = true;
                         mediaElement.addEventListener('click', loadMedia);
                     } else if (file.endsWith('.mp3')||
@@ -179,12 +179,12 @@
                         file.endsWith('.ogg')
                     ) {
                         mediaElement = document.createElement('audio');
-                        mediaElement.dataset.src = `/video/media/${parentPath}/${file}`;
+                        mediaElement.dataset.src = `/media/${parentPath}/${file}`;
                         mediaElement.controls = true;
                         mediaElement.addEventListener('click', loadMedia);
                     } else {
                         mediaElement = document.createElement('img');
-                        mediaElement.src = `/video/media/${parentPath}/${file}`;
+                        mediaElement.src = `/media/${parentPath}/${file}`;
                         mediaElement.alt = file;
                     }
 
@@ -281,7 +281,7 @@
             return;
         }
 
-        fetch('/video/delete', {
+        fetch('/delete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -312,7 +312,7 @@
             return;
         }
 
-        fetch('/video/delete', {
+        fetch('/delete', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'

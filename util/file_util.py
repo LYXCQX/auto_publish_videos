@@ -100,7 +100,16 @@ def get_audio_files(folder_path):
                 audio_files.append(os.path.join(root, file))
     return audio_files
 
-
+def delete_files(file_paths):
+    for file_path in file_paths:
+        try:
+            if 'video\\temp' in file_path:
+                os.remove(file_path)
+                print(f"删除成功: {file_path}")
+        except FileNotFoundError:
+            print(f"文件未找到: {file_path}")
+        except Exception as e:
+            print(f"删除失败 {file_path}: {e}")
 def get_mp4_files_path(folder_path):
     mp4_files = []
     for root, dirs, files in os.walk(folder_path):
@@ -110,6 +119,34 @@ def get_mp4_files_path(folder_path):
                 mp4_files.append(path)
     return mp4_files
 
+# 获取视频，这个会看文件及名称是否包含goods_name
+
+def find_folders(base_path, goods_name):
+    result = []
+    for root, dirs, files in os.walk(base_path):
+        for dir_name in dirs:
+            if goods_name in dir_name:
+                if not is_add_goods_name(root,result):
+                    result.append(os.path.join(root, dir_name))
+        # 只处理一级子文件夹
+    return result
+
+# 便利是否已经添加过上级目录
+def is_add_goods_name(root, result):
+    for ins_goods_name in result:
+        if root.startswith(ins_goods_name):
+            return True
+    return False
+
+def get_mp4_by_goods_name(base_path,goods_name):
+    goods_name_patch_ = find_folders(base_path,goods_name)
+    if len(goods_name_patch_) ==0:
+        return get_mp4_files_path(base_path)
+    else:
+        video_path =[]
+        for goods_name_patch in goods_name_patch_:
+            video_path.extend(get_mp4_files_path(goods_name_patch))
+        return video_path
 
 def get_file_names(folder_path):
     mp4_files = []
@@ -149,6 +186,10 @@ def get_account_file(user_id):
     account_file = Path(BASE_DIR / "cookies" / user_ck_path)
     return account_file
 
+def get_live_account_file(user_id):
+    user_ck_path = "{}_account.json".format(user_id)
+    account_file = Path(BASE_DIR / "cookies/live" / user_ck_path)
+    return account_file
 
 def create_missing_dirs(folder_path):
     if not os.path.exists(folder_path):

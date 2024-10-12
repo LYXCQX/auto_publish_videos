@@ -97,22 +97,25 @@ def on_message(message, data):
                 lat = pois['poiInfo']['latitude']
                 if str(item_id) in goods_map:
                     ins_sql = goods_map[item_id]
-                    db.execute(ins_sql, (brand_base, brand, lng, lat))
+                    db.execute(ins_sql, (brand_base, brand,f'video/source/{brand_base}', lng, lat))
                     video_goods_ids.append(str(item_id))
                     del goods_map[item_id]
                 else:
                     goods_map[item_id] = (
-                        f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
-                        f"(%s,%s,%s,%s,%s,%s,%s,%s,'{brand_base}','{brand}',null,'刷到先囤 不用可退 到期自动退',1,{lng},{lat},%s)")
+                        f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `video_path`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
+                        f"(%s,%s,%s,%s,%s,%s,%s,%s,'{brand_base}','{brand}','video/source/{brand_base}',null,'刷到先囤 不用可退 到期自动退',1,{lng},{lat},%s)")
 
         elif json_res['url'].startswith('/rest/op/vc/distribution/item/itemDetail'):
+            print(json_res)
             goods = json.loads(json_res['responseBody'])['data']
             item_id = goods['itemId']
             if str(item_id) in video_goods_ids:
                 loguru.logger.info(f"商品已存在{goods['itemTitle']}")
             else:
                 loguru.logger.info(f"新增商品{goods['itemTitle']}")
-                cheapest_sku_promotion = goods['cheapestSkuPromotion']
+                cheapest_sku_promotion = None
+                if 'cheapestSkuPromotion' in goods:
+                    cheapest_sku_promotion = goods['cheapestSkuPromotion']
                 if cheapest_sku_promotion is not None:
                     sale_price = cheapest_sku_promotion['promotionPrice'] / 100
                 else:
@@ -150,7 +153,10 @@ def on_message(message, data):
                             print(goods_des)
                 item_title = (goods['itemTitle'].replace('shakeshake（自动发券到小程序）', '')
                               .replace('（自动发券到小程序）', '')
-                              .replace('【券自动发小程序使用】', ''))
+                              .replace('【券自动发小程序使用】', '')
+                              .replace('券自动发小程序使用', '')
+                              .replace('【团购】', '')
+                              )
                 item_title = re.sub(r'^.*?】', '', item_title) if item_title.startswith('【') else item_title
                 photo_commission = goods['photoCommission']
                 sale_volume = goods['saleVolume']
@@ -164,8 +170,8 @@ def on_message(message, data):
                     del goods_map[item_id]
                 else:
                     goods_map[item_id] = (
-                        f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
-                        f"({item_id},'{item_title}','{item_title}','{goods_des}',{photo_commission},{sale_price},{market_price},{sale_volume},%s,%s,null,'刷到先囤 不用可退 到期自动退',1,%s,%s,'{tips}')")
+                        f"INSERT INTO `video_goods`(`goods_id`, `goods_name`, `goods_title`, `goods_des`, `commission_rate`, `real_price`, `goods_price`, `sales_volume`, `brand_base`, `brand`, `video_path`,`sales_script`, `top_sales_script`, `type`, `lng`, `lat`, `tips`) VALUES "
+                        f"({item_id},'{item_title}','{item_title}','{goods_des}',{photo_commission},{sale_price},{market_price},{sale_volume},%s,%s,%s,null,'刷到先囤 不用可退 到期自动退',1,%s,%s,'{tips}')")
 
     else:
         loguru.logger.info(message)

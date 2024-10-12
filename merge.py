@@ -12,12 +12,15 @@ from util.db.sql_utils import getdb
 from util.file_util import get_mp4_files_path
 from video_dedup.config_parser import read_dedup_config
 from video_dedup.video_dedup_by_config import process_dedup_by_config
+import logging
 
+logging.basicConfig()
+logging.getLogger('apscheduler').setLevel(logging.DEBUG)
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 config = read_dedup_config()
 
 lock = FileLock("/opt/software/auto_publish_videos/job.lock")
-
+scheduler = BlockingScheduler()
 
 def lock_create_video():
     try:
@@ -35,7 +38,7 @@ def scheduled_job():
     try:
         db = getdb()
         # 查询需要发布的用户，用来提前生成视频
-        user_infos = db.fetchall("select * from user_info")
+        user_infos = db.fetchall("select * from user_info where type =1")
         # 查询可以发布的商品
         video_goods = db.fetchall("select * from video_goods where state = 1 order by id desc ")
         # 循环并找出可以生成视频（未到发布条数） 还没生成视频的用户
@@ -50,45 +53,46 @@ def scheduled_job():
                 if len(video_goods_publish) == 0:
                     video_goods_publish = []
                 loguru.logger.info(f'{user_info["username"]} 需要合并 {user_info["pub_num"]} 已经合并 {pub_num}')
-                if pub_num > user_info['pub_num']:
-                    break
-                use_goods, hot_goods = get_use_good(video_goods, video_goods_publish_his, 1)
-                if len(use_goods) == 0:
-                    use_goods, hot_goods = get_use_good(video_goods, video_goods_publish, 0)
-                # 将热门数据放队伍最前边
-                use_goods = hot_goods + use_goods
-                user_brands = []
-                for use_good in use_goods:
-                    goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
-                    use_good['sales_script'] = get_sales_scripts(use_good)
-                    loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
-                    # 相同的平台才能生成对应的视频
-                    if user_info['type'] == use_good['type']:
-                        if (pub_num < user_info['pub_num']
-                                and use_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]
-                                and use_good['brand_base'] not in user_brands
-                        ):
-                            try:
-                                video_path_list = get_mp4_files_path(f"{config.video_path}{use_good['brand_base']}")
-                                if len(video_path_list) < 1:
-                                    loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
-                                else:
-                                    now_goods = {'brand_base': use_good['brand_base'], 'vg_id': use_good['id']}
-                                    user_brands.append(use_good['brand_base'])
-                                    video_goods_publish.append(now_goods)
-                                    video_path = process_dedup_by_config(config, use_good, goods_des)
-                                    if video_path is not None:
-                                        db.execute(
-                                            f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
-                                            f"VALUES ({use_good['goods_id']},{user_info['user_id']},{use_good['id']},'{video_path}','{use_good['brand']}','{goods_des}',{1})")
-                                        pub_num += 1
+                if pub_num >= user_info['pub_num']:
+                    loguru.logger.info(f'{user_info["username"]}全部合并完毕')
+                else:
+                    use_goods, hot_goods = get_use_good(video_goods, video_goods_publish_his, 1)
+                    if len(use_goods) == 0:
+                        use_goods, hot_goods = get_use_good(video_goods, video_goods_publish, 0)
+                    # 将热门数据放队伍最前边
+                    use_goods = hot_goods + use_goods
+                    user_brands = []
+                    for use_good in use_goods:
+                        goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
+                        use_good['sales_script'] = get_sales_scripts(use_good)
+                        loguru.logger.info(f"合并视频有{len(video_goods)}商品需要处理")
+                        # 相同的平台才能生成对应的视频
+                        if user_info['type'] == use_good['type']:
+                            if (pub_num < user_info['pub_num']
+                                    and use_good['id'] not in [obj['vg_id'] for obj in video_goods_publish]
+                                    and use_good['brand_base'] not in user_brands
+                            ):
+                                try:
+                                    video_path_list = get_mp4_files_path(f"{use_good['video_path']}")
+                                    if len(video_path_list) < 1:
+                                        loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
                                     else:
-                                        user_brands.remove(use_good['brand_base'])
-                                        video_goods_publish.remove(now_goods)
-                            except Exception as e:
-                                loguru.logger.exception(
-                                    f'{user_info["user_id"]} -  商品名称:{use_good["goods_name"]} 商品id:{use_good["id"]}')
-                                pass
+                                        now_goods = {'brand_base': use_good['brand_base'], 'vg_id': use_good['id']}
+                                        user_brands.append(use_good['brand_base'])
+                                        video_goods_publish.append(now_goods)
+                                        video_path = process_dedup_by_config(config, use_good, goods_des,False)
+                                        if video_path is not None:
+                                            db.execute(
+                                                f"INSERT INTO video_goods_publish(`goods_id`, `user_id`, `vg_id`, `video_path`,`brand`,`video_title`, `state`) "
+                                                f"VALUES ({use_good['goods_id']},{user_info['user_id']},{use_good['id']},'{video_path}','{use_good['brand']}','{goods_des}',{1})")
+                                            pub_num += 1
+                                        else:
+                                            user_brands.remove(use_good['brand_base'])
+                                            video_goods_publish.remove(now_goods)
+                                except Exception as e:
+                                    loguru.logger.exception(
+                                        f'{user_info["user_id"]} -  商品名称:{use_good["goods_name"]} 商品id:{use_good["id"]}')
+                                    pass
             except Exception as e:
                 loguru.logger.error(f"生成要发布的视频失败: {e}")
     except Exception as e:
@@ -105,7 +109,7 @@ def get_use_good(video_goods, video_goods_publish, video_type):
     no_id = []
     hot_goods = []
     for video_good in video_goods:
-        video_path_list = get_mp4_files_path(f"{config.video_path}{video_good['brand_base']}")
+        video_path_list = get_mp4_files_path(f"{video_good['video_path']}")
         if len(video_path_list) > 1:
             if video_good['hot_score'] > config.hot_score:
                 hot_goods.append(video_good)
@@ -138,15 +142,15 @@ def get_goods_des(video_good):
     goods_price = convert_amount(video_good['goods_price'])
     real_price = convert_amount(video_good['real_price'])
     goods_des = [
-        f"{get_brand_no_kh(video_good['brand'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用,{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand_base'])}刚上新一个{video_good['goods_title']}的活动{'' if goods_price == real_price else f'，原价{goods_price}'},现在只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand_base'])}{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}这价格也太划算了吧，历史低价，赶紧囤够几单慢慢用,{random.choice(config.center_sales)}",
         f"这个只要{real_price}的{video_good['goods_title']}绝对不允许还有人不知道,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{video_good['goods_title']}仅需{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"赶紧来看看我们的{video_good['goods_title']}只要{real_price}，你就可以体验到这块超值优惠的套餐哟,{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
         f"{video_good['goods_title']}现在价格超值，{get_good_des_ran(video_good['goods_des'])}这个价格简直不能太好了，这个价格不会持续太久,{random.choice(config.center_sales)}",
         f"{real_price}就可以享受到{video_good['goods_title']},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
-        f"{get_brand_no_kh(video_good['brand'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}"]
+        f"{get_brand_no_kh(video_good['brand_base'])}{video_good['goods_title']}{'' if goods_price == real_price else f'，昨天还要{goods_price},今天'}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}",
+        f"{get_brand_no_kh(video_good['brand_base'])}{video_good['goods_title']}只要{real_price},{get_good_des_ran(video_good['goods_des'])}{random.choice(config.center_sales)}"]
     return random.choice(goods_des)
 
 
@@ -154,7 +158,7 @@ def get_good_des_ran(goods_des):
     goods_des = f'{goods_des},' if goods_des is not None and goods_des != '' else ''
     goods_des_s = [
         goods_des,
-        '',
+        # '',
     ]
 
     return random.choice(goods_des_s)
@@ -164,7 +168,7 @@ def get_sales_scripts(video_good):
     goods_price = convert_amount(video_good['goods_price'])
     real_price = convert_amount(video_good['real_price'])
     sales_script = [
-        f"{get_brand_no_kh(video_good['brand'])}\n{handle_txt(video_good['goods_title'], 10)}\n{'' if goods_price == real_price else f'原价{goods_price}'}\n仅需{real_price}"]
+        f"{get_brand_no_kh(video_good['brand_base'])}\n{handle_txt(video_good['goods_title'], 10)}\n{'' if goods_price == real_price else f'原价{goods_price}'}\n仅需{real_price}"]
     if video_good['sales_script'] != '' and video_good['sales_script'] is not None:
         sales_script.append(video_good['sales_script'])
     return random.choice(sales_script).replace('\n\n', '\n').replace('\n \n', '\n')
@@ -232,9 +236,5 @@ if __name__ == '__main__':
     if args.one:
         lock_create_video()
     else:
-        scheduler = BlockingScheduler()
-        now = datetime.now()
-        initial_execution_time = datetime.now().replace(hour=now.hour, minute=now.minute, second=now.second,
-                                                        microsecond=0)
         scheduler.add_job(lock_create_video, 'interval', minutes=32, max_instances=1)  # 每30分钟执行一次
         scheduler.start()

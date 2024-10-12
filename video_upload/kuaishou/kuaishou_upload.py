@@ -1,36 +1,38 @@
 # -*- coding: utf-8 -*-
+import asyncio
 import base64
 import json
-import pathlib
+import os
 import random
 import time
 import uuid
 from datetime import datetime
 from io import BytesIO
+
 import loguru
 from PIL import Image
 from apscheduler.schedulers.blocking import BlockingScheduler
 from playwright.async_api import Playwright, async_playwright
-import os
-import asyncio
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 libs_path = os.path.join(current_dir, '..', '..', 'MediaCrawler', 'libs', 'stealth.min.js')
 from util.db.sql_utils import getdb
-from util.file_util import get_account_file, download_video, get_upload_login_path
+from util.file_util import get_account_file, get_upload_login_path
 
 loguru.logger.add("error.log", format="{time} {level} {message}", level="ERROR")
 db = getdb()
-#上传视频按钮
+# 上传视频按钮
 update_class_list = ['.SOCr7n1uoqI-', '._upload-btn_1kfpp_68']
-#描述信息
+# 描述信息
 detail_class_list = ['.clGhv3UpdEo-', '._description_36dct_62']
-#位置信息，定位后显示的城市标签
+# 位置信息，定位后显示的城市标签
 position_class_list = ['.uUoMPMIW8HY-', '._position-tips_36dct_318']
-#重新上传按钮
+# 重新上传按钮
 reupload_class_list = ['.diPApjTPuXE-', '._reupload_teo17_31']
 # 发布按钮
 publish_class_list = ['.XwacrNGK2pY-', '._footer_9braw_95']
+
+
 async def cookie_auth(account_file):
     async with async_playwright() as playwright:
         browser = await playwright.chromium.launch(headless=True)
@@ -40,7 +42,7 @@ async def cookie_auth(account_file):
         # 访问指定的 URL
         await page.goto("https://cp.kuaishou.com/article/publish/video")
         try:
-            await page.wait_for_selector(await get_use_class(page,update_class_list), timeout=20000)  # 等待5秒
+            await page.wait_for_selector(await get_use_class(page, update_class_list), timeout=20000)  # 等待5秒
             loguru.logger.info("[+] cookie 有效")
             return True
         except Exception as e:
@@ -49,10 +51,10 @@ async def cookie_auth(account_file):
             return False
 
 
-#获取不同的class名称
+# 获取不同的class名称
 async def get_use_class(page, class_list):
     await page.wait_for_load_state('networkidle')
-    res_clas=None
+    res_clas = None
     # 检查页面是否存在具有指定 class 的元素
     for clas in class_list:
         element = await page.query_selector(clas)
@@ -108,7 +110,7 @@ async def kuaishou_cookie_gen(account_file):
         await page.goto('https://cp.kuaishou.com/profile')
         await asyncio.sleep(0.5)
         user_id = await get_user_id(page)
-        user_name = await page.locator('.detail__name').text_content()
+        user_name = await page.locator('.info-top-name').text_content()
         loguru.logger.info(f'{user_id}---{user_name}')
         # 点击调试器的继续，保存cookie
         await context.storage_state(path=get_account_file(user_id))
@@ -122,8 +124,8 @@ async def kuaishou_cookie_gen(account_file):
 async def get_user_id(page):
     start_time = time.time()  # 获取开始时间
     while True:
-        user_id = await page.locator('.detail__userKwaiId').text_content()
-        user_id = user_id.replace(" 用户 ID：", "").strip()
+        user_id = await page.locator('.info-top-number').text_content()
+        user_id = user_id.replace("快手号：", "").strip()
         if user_id == '0':
             current_time = time.time()  # 获取当前时间
             elapsed_time = current_time - start_time  # 计算已经过去的时间
@@ -168,7 +170,8 @@ async def video_is_upload(goods, page):
 
 
 class KuaiShouVideo(object):
-    async def upload(self, playwright: Playwright, goods, user_info, account_file, local_executable_path) -> None:
+    async def upload(self, playwright: Playwright, goods, user_info, account_file, local_executable_path,
+                     video_bill) -> None:
         # 使用 Chromium 浏览器启动一个浏览器实例
         if local_executable_path:
             browser = await playwright.chromium.launch(headless=True, executable_path=local_executable_path)
@@ -269,6 +272,8 @@ class KuaiShouVideo(object):
                 db.execute(f"update video_goods_publish set state = 2 where id = {goods['id']}")
                 if os.path.exists(goods['video_path']):
                     os.remove(goods['video_path'])
+                if video_bill is not None:
+                    await self.get_pub_url(page, video_bill, user_info)
                 await context.storage_state(path=account_file)  # 保存cookie
                 loguru.logger.info('  [-]cookie更新完毕！'.format(user_info['username']))
                 break
@@ -286,18 +291,41 @@ class KuaiShouVideo(object):
         await context.close()
         await browser.close()
 
+    # 获取发布后的视频url
+    async def get_pub_url(self, page, video_bill, user_info):
+        while True:
+            print(await page.locator('.video-item__detail__row__status').inner_text())
+            if await page.locator('.video-item__detail__row__status').inner_text() == '已发布':
+                video_item = await page.query_selector('.video-item__detail__row')
+                if video_item:
+                    await video_item.click()  # 使用 await
+                    new_page = await page.context.wait_for_event('page')
+                    await new_page.wait_for_load_state('networkidle')  # 等待新页面加载完成
+                    now_page_url = new_page.url
+                    now_path = now_page_url.split('?')[0]
+                    loguru.logger.info(f"视频发布完成：\n用户昵称：{user_info['username']}\n"
+                                       f"用户id：{user_info['user_id']}\n"
+                                       f"用户电话：{user_info['user_phone']}\n"
+                                       f"用户等级：{user_info['user_level']}\n"
+                                       f"视频链接：{now_path}")
+                    db.execute(f"INSERT INTO `video_bill_user`( `vb_id`, `user_id`, `state`, `video_url`) "
+                               f"VALUES ({video_bill['id']},{user_info['user_id']},2,'{now_path}')")
+                else:
+                    print('未找到视频项')
+                break
+
     async def main(self):
         user_infos = db.fetchall("select * from user_info")
         for user_info in user_infos:
             try:
                 # 根据视频生成记录发布视频
                 good = db.fetchone(
-                    f"select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 and vgp.user_id = {user_info['user_id']} limit 1")
+                    f"select * from video_goods_publish vgp left join video_tools.video_goods vg on vgp.vg_id = vg.id where vgp.state=1 and vgp.type=1 and vgp.user_id = {user_info['user_id']} limit 1")
                 if datetime.now().hour in json.loads(user_info['publish_hours']) and good is not None:
                     account_file = get_account_file(user_info['user_id'])
                     async with async_playwright() as playwright:
                         await kuaishou_setup(account_file, handle=True)
-                        await self.upload(playwright, good, user_info, account_file, '')
+                        await self.upload(playwright, good, user_info, account_file, '', None)
             except Exception as e:
                 loguru.logger.error(e)
 

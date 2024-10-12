@@ -12,4 +12,4 @@ call conda activate auto_publish_videos
  start /B python split.py
  start /B python merge.py
  start /B python upload.py
- start /B python add_user.py
+@REM  start /B python add_user.py

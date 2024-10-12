@@ -18,26 +18,27 @@ from video_merge.video_info import get_video_info, get_most_compatible_resolutio
 config = read_dedup_config()
 
 
-def process_dedup_by_config(config: Config, oral_text):
+def process_dedup_by_config(config: Config, oral_text,audio_path_tmp):
     time0 = time.time()
-    # audio_path_tmp = f'{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp3'
+    srt_path_tmp = get_temp_path('.srt')
     bgm_path_tmp = f'{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp3'
-    audio_path_tmp = "E:\IDEA\workspace\\auto_publish_videos\\video\live\\audio.wav"
     input_video = ''
     ffmpeg_tmp = ''
     try:
-        # create_audio(oral_text, audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
-        merged_audio = ffmpeg.input(audio_path_tmp)
-        audio_duration = AudioSegment.from_file(audio_path_tmp).duration_seconds
-        loguru.logger.info(f'音频时间{audio_duration}')
-        max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
-        if config.live_bgm_audio_path != '':
-            loguru.logger.info('config.live_bgm_audio_path -> ', config.live_bgm_audio_path)
-            loop_audio_to_length(random.choice(config.live_bgm_audio_path), bgm_path_tmp, max_sec)
-            bgm_audio = read_ffmpeg_audio_from_file(bgm_path_tmp)
-            merged_audio = merge_and_adjust_volumes(merged_audio, bgm_audio, max_sec, 2.0, 0.1)
-        # 按照配置合并视频
-        input_video = merge_video(config, {"brand_base": "团油"}, max_sec, 'E:\团油\快手通用素材库')
+        if audio_path_tmp is not None:
+            if oral_text is not None:
+                create_audio(oral_text.replace(" ", ""), audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
+            merged_audio = ffmpeg.input(audio_path_tmp)
+            audio_duration = AudioSegment.from_file(audio_path_tmp).duration_seconds
+            loguru.logger.info(f'音频时间{audio_duration}')
+            max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
+            if config.live_bgm_audio_path != '':
+                loguru.logger.info('config.live_bgm_audio_path -> ', config.live_bgm_audio_path)
+                loop_audio_to_length(random.choice(config.live_bgm_audio_path), bgm_path_tmp, max_sec)
+                bgm_audio = read_ffmpeg_audio_from_file(bgm_path_tmp)
+                merged_audio = merge_and_adjust_volumes(merged_audio, bgm_audio, max_sec, 2.0, 0.1)
+            # 按照配置合并视频
+            input_video = merge_video(config, {"brand_base": "团油"}, max_sec, 'E:\团油\直播')
         if input_video is None:
             return
 
@@ -115,7 +116,7 @@ def loop_audio_to_length(audio_file_path, output_file_path , target_length_secon
 def merge_video(config: Config, good: VideoGoods, max_sec, video_paths):
     start_time: float = time.time()
     video_path_list = get_mp4_files_path(
-        f"{config.video_path}{good['brand_base']}" if video_paths is None else video_paths)
+        f"{good['video_path']}" if video_paths is None else video_paths)
     if len(video_path_list) < 1:
         loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
         return
@@ -218,8 +219,12 @@ def merge_video(config: Config, good: VideoGoods, max_sec, video_paths):
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
     loguru.logger.info(f'---{video_stream}---{audio_stream}---{output_path}')
-    stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
-                           crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
+    if audio_stream is None:
+        stream = ffmpeg.output(video_stream, output_path, y='-y', vcodec='libx264', preset='medium',
+                               crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
+    else:
+        stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
+                               crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
     ffmpeg.run(stream)
 
 
@@ -234,25 +239,5 @@ def get_mp4_files(folder_path):
 
 
 if __name__ == '__main__':
-    process_dedup_by_config(config, "打开咱们下面的小团子" +
-                            "咱们给大家上新了很多的优惠链接" +
-                            "家人们都可以点击下方的小团子，直接去冲 " +
-                            "都可以直接去拍，主播直播间主打的就是一个经济实惠，" +
-                            "今天的一号链接是团邮代金券， 让你的加油成本降低，让每一滴油都更加经济实惠，89元抵100元代金券，让你的购物更加划算，咱们直接在线上买，到时候加油的时候可以直接用，大家都知道，线下加油是不会有任何优惠的，一毛钱也不会给你便宜，" +
-                            "购买了咱们得团油优惠券，就可以享受到优惠，那么省下来的钱，自己买点东西吃不好么，对吧，所以说可以在咱们直播间直接下单，" +
-                            "如果说您在主播直播间拍完之后，您觉得贵了或者不想要了，这个都没关系，如果过期咱还没有使用，会自动给大家退款，真的是非常实惠 ，非常划算的，" +
-                            "大家刷到主播，咱们趁着有优惠咱们多拍上几单，抢到就是赚到，今天就是说咱们在线上做一个推广，" +
-                            "直播间下单更优惠呢，拍完省很多钱，使用方式和你去线下实体店消费是一样的呢，" +
-                            "可以点开小团子下单，体验一下宝宝们，先直播间左上角点点关注 ，点关注之后，再打开下方小团子抢优惠，咱们今天直播间下单，都享受安心购，无忧购，随时退，全额退，不收你任何一分一毛手续费，" +
-                            "放心拍 大胆拍 不用担心用不了，这个商品是咱们直播间宠粉福利，机会难得 手快有 手慢无，大家赶紧下单啦，咱们这次的商品价格真的是超值的优惠，绝对物超所值 买到就是赚到，家人们 点下方团子冲，" +
-                            "给大家推荐一款爆款商品，那就是咱们的二号链接，二号链接是178元抵200元代金券，相当于八折购买，让你的购物更加划算，咱们直接在线上买，到时候加油的时候可以直接用，大家都知道，线下加油是不会有任何优惠的，一毛钱也不会给你便宜，" +
-                            "购买了咱们得团油优惠券，就可以享受到优惠，那么省下来的钱，自己出去吃顿饭不香么，对吧，所以说可以在咱们直播间直接下单，" +
-                            "这里是快手和合作的团购福利专场，大家喜欢的朋友们都可以往咱们的直播间进一进，" +
-                            "咱们今天所有的商品放心去拍 放心去囤，错过了这次 ，下次就要等好久了，点击下方的团子赶紧买起来吧，" +
-                            "主播直播间主打的就是一个经济实惠，如果说您在主播直播间拍完之后，您觉得贵了，或者不想要了，这个都没关系，如果过期咱还没有使用，会自动给大家退款，" +
-                            "这个价格的话真的不需要多介绍，因为宝宝们在线下门店消费过买过的，一眼就能对比出来咱们价格到底有多么划，算多么有竞争力，所以能囤的抓紧囤，今天就是说在线上做一个推广直播间，下单更优惠，" +
-                            "拍完省很多钱，使用方式和你去线下实体店消费是一样的，可以点开小团子下单体验一下，除了直播间介绍的商品，咱们还给大家安排了一些我们快手的其他团购商品，都是给大家打到很低的价格，十分划算，大家有兴趣的可以看一看，" +
-                            "囤一囤，我们任何商品都支持随时退，过期退，不收任何手续费，再提醒下直播间的家人们，咱们的优惠套餐都是限量折扣，" +
-                            "大家可以看一下咱们得另一款商品，那就是咱们的三号链接，三号链接是178元抵200元代金券，相当于八折购买，让你的购物更加划算，咱们直接在线上买，到时候加油的时候可以直接用，大家都知道，线下加油是不会有任何优惠的，一毛钱也不会给你便宜，" +
-                            "购买了咱们得团油优惠券，就可以享受到优惠，那么省下来的钱，自己买点东西吃不好么，对吧，所以说可以在咱们直播间直接下单，"
-                            )
+    audio_path = f'{config.video_temp}{int(time.time())}_{uuid.uuid4()}.mp3'
+    process_dedup_by_config(config, None,audio_path)

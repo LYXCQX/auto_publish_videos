@@ -17,12 +17,13 @@ def split_video_into_scenes(video_path, output_path, threshold=27.0):
         os.makedirs(output_path)
     if len(scene_list) > 1:
         split_video_ffmpeg(video_path, scene_list, output_path, '$VIDEO_NAME-$SCENE_NUMBER.mp4',
-                           arg_override='-map 0:v -c:v libx264 -preset veryfast -crf 22',
+                           arg_override='-map 0:v -c:v h264_nvenc -pix_fmt yuv420p -preset slow',
                            show_progress=True)
     else:
         # 获取文件名，不包括扩展名
         file_name = Path(video_path).stem
-        split_ml = f'ffmpeg -i {video_path} -c:v copy -c:a copy -reset_timestamps 1  -segment_time 3 -f segment "{output_path}/{file_name}-%03d.mp4"'
+        # split_ml = f'ffmpeg -i {video_path} -c:v copy -c:a copy -reset_timestamps 1  -segment_time 5 -f segment "{output_path}/{file_name}-%03d.mp4"'
+        split_ml = f'ffmpeg -i {video_path} -c:v h264_nvenc -pix_fmt yuv420p -preset slow  -c:a copy -reset_timestamps 1 -segment_time 5 -f segment "{output_path}/{file_name}-%03d.mp4"'
         # 执行命令
         try:
             subprocess.run(split_ml, shell=True, check=True)
@@ -34,5 +35,5 @@ def split_video_into_scenes(video_path, output_path, threshold=27.0):
 
 
 if __name__ == '__main__':
-    split_video_into_scenes('D:/IDEA/workspace/auto_publish_videos/video/download/aa/11.mp4',
-                            'D:/IDEA/workspace/auto_publish_videos/video/source/')
+    split_video_into_scenes("D:\system\Downloads\\1.mp4",
+                            "E:\团油\团油\\2分钟")

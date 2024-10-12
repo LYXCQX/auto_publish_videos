@@ -22,33 +22,16 @@ def video_properties(input_path):
 
 
 def get_video_audio(input_path):
-    stream = ffmpeg.input(input_path, hwaccel='cuda')
+    stream = ffmpeg.input(input_path)
     audio = stream.audio
     return audio, stream
 
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
     loguru.logger.info(f'---{video_stream}---{audio_stream}---{output_path}')
-
-    # 使用 h264_nvenc 编码器来利用 GPU 加速
-    stream = ffmpeg.output(
-        video_stream, audio_stream, output_path,
-        vcodec='h264_nvenc',  # 使用 GPU 加速的编码器
-        pix_fmt='yuv420p',
-        preset='slow',
-        bit_rate=str(target_bitrate) + 'k',
-        maxrate='20M',
-        bufsize='40M',
-        shortest=None
-    )
+    stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='libx264', preset='medium',
+                           crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
     ffmpeg.run(stream)
-
-
-# def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
-#     loguru.logger.info(f'---{video_stream}---{audio_stream}---{output_path}')
-#     stream = ffmpeg.output(video_stream, audio_stream, output_path, y='-y', vcodec='h264_cuvid', preset='medium',
-#                            crf=18, **{'b:v': str(target_bitrate) + 'k'}, shortest=None).global_args('-tag:v', 'hvc1')
-#     ffmpeg.run(stream)
 
 
 # def merge_video_temperary(video_stream, audio_stream, target_bitrate=5000):
@@ -68,7 +51,7 @@ def images_to_video(image_paths, temp_dir, output_file, bit_rate):
     # image_path = os.path.join(temp_dir, f"frame_{i:05d}.png")
     input_pattern = os.path.join(temp_dir, 'frame_%05d.png')
     (
-        ffmpeg.input(input_pattern, framerate=30, hwaccel='cuda')
+        ffmpeg.input(input_pattern, framerate=30)
         .output(output_file, y='-y', vcodec='libx265', preset='medium', crf=18,
                 **{'b:v': str(bit_rate) + 'k'}).global_args('-tag:v', 'hvc1')
         .run()
@@ -136,8 +119,8 @@ def crop_video(input_stream, width, height, crop_size):
 
 def add_pip_to_video(background_video, pip_video, output_video, opacity=1.0):
     # 创建输入流
-    input_background = ffmpeg.input(background_video, hwaccel='cuda')
-    input_pip = ffmpeg.input(pip_video, hwaccel='cuda')
+    input_background = ffmpeg.input(background_video)
+    input_pip = ffmpeg.input(pip_video)
 
     # 对画中画视频进行缩放和透明度调整
     pip_scaled = input_pip.filter('scale', 160, 120)
@@ -150,10 +133,9 @@ def add_pip_to_video(background_video, pip_video, output_video, opacity=1.0):
     ffmpeg.output(output, output_video, shortest=None).run()
 
 
-def add_watermark(input_stream, config: Config, img_x, img_dz_y, img_y, img_w, img_h, watermark_type='text',
+def add_watermark(input_stream, config: Config, watermark_content, watermark_type='text',
                   direction='right-top-to-bottom',
                   duration=5):
-    watermark_content = config.watermark_text
     if direction == 'right-top-to-bottom':
         x_expr = "W-w"
         y_expr = "mod(t*H/{},H)".format(duration)
@@ -172,13 +154,11 @@ def add_watermark(input_stream, config: Config, img_x, img_dz_y, img_y, img_w, i
                                            fontcolor='yellow', borderw=1, bordercolor='red',
                                            fontfile=get_font_file(config))
     elif watermark_type == 'image':
-        input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, img_x, img_y, img_w,
-                                  img_h, )
-        input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, img_x, img_dz_y, img_w,
-                                  img_h, )
+        input_stream = add_img_sy(random.choice(config.watermark_image_path), input_stream, 20, 125)
+        input_stream = add_img_sy(random.choice(config.dz_watermark_image_path), input_stream, 40, 930)
 
     elif watermark_type == 'video':
-        watermark_stream = ffmpeg.input(random.choice(config.watermark_video_path), hwaccel='cuda')
+        watermark_stream = ffmpeg.input(random.choice(config.watermark_video_path))
         watermark_stream = watermark_stream.filter_('trim', duration=10)
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x_expr, y=y_expr)
 
@@ -186,20 +166,20 @@ def add_watermark(input_stream, config: Config, img_x, img_dz_y, img_y, img_w, i
 
 
 # 添加图片水印
-def add_img_sy(watermark_image_path, input_stream, x, y, img_w, img_h):
+def add_img_sy(watermark_image_path, input_stream, x, y):
     if watermark_image_path.endswith('gif'):
-        watermark_stream = ffmpeg.input(watermark_image_path, stream_loop=-1, hwaccel='cuda')
-        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w=img_w, h=img_h)
+        watermark_stream = ffmpeg.input(watermark_image_path, stream_loop=-1)
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1)
     else:
-        watermark_stream = ffmpeg.input(watermark_image_path, loop=1, hwaccel='cuda')
-        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w=img_w, h=img_h)
+        watermark_stream = ffmpeg.input(watermark_image_path, loop=1)
+        watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
         input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1, enable='mod(t,1)')
     return input_stream
 
 
 def add_img_goods(watermark_image_path, input_stream, x, y):
-    watermark_stream = ffmpeg.input(watermark_image_path, loop=1, hwaccel='cuda')
+    watermark_stream = ffmpeg.input(watermark_image_path, loop=1)
     watermark_stream = ffmpeg.filter(watermark_stream, 'scale', w='200', h='210')
     input_stream = ffmpeg.overlay(input_stream, watermark_stream, x=x, y=y, shortest=1)
     return input_stream
@@ -257,23 +237,16 @@ def add_title(input_stream, config, title, line_num=10, title_position='top', ti
 
 
 def draw_text(config, fontsize, input_stream, title, title_x, title_y, fontfile, fontcolor):
-    if random.choice([True, False]):
-        input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
-                                             shadowcolor='black', shadowx=4, shadowy=4,
-                                             fontfile=fontfile,
-                                             borderw=1, bordercolor='black')
-    else:
-        input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
-                                             shadowcolor='black', shadowx=4, shadowy=4,
-                                             fontfile=fontfile,
-                                             borderw=1, bordercolor='black',
-                                             enable='between(t,0,3)')
+    input_stream = input_stream.drawtext(text=title, x=title_x, y=title_y, fontsize=fontsize, fontcolor=fontcolor,
+                                         shadowcolor='black', shadowx=4, shadowy=4,
+                                         fontfile=fontfile,
+                                         borderw=1, bordercolor='black')
     return input_stream
 
 
 def remove_silent_video(input_path, origin_duration, silence_thresh, min_silence_len, cut_ratio):
     # 初始化 FFmpeg 输入
-    input_video = ffmpeg.input(input_path, hwaccel='cuda')
+    input_video = ffmpeg.input(input_path)
     if cut_ratio == 0:
         return input_video.video, origin_duration
 

@@ -9,8 +9,10 @@
 from contextlib import contextmanager
 
 import pymysql
+import logging
 from dbutils.pooled_db import PooledDB
-
+logging.basicConfig(level=logging.INFO,
+                    format='%(asctime)s - %(levelname)s - %(message)s')
 
 class MySQLConnectionPool:
     """MySQL 基本功能封装 """
@@ -64,6 +66,7 @@ class MySQLConnectionPool:
     def execute(self, sql, args=None):
         with self.pool as cursor:
             cursor.execute(sql, args)
+            return cursor.lastrowid
 
     def executemany(self, sql, args):
         with self.pool as cursor:
