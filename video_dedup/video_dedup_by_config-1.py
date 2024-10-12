@@ -3,7 +3,6 @@ import shutil
 import time
 import uuid
 from concurrent.futures import ThreadPoolExecutor
-from typing import List
 
 from model.model import VideoGoods
 from util.audio_util import *
@@ -12,10 +11,7 @@ from util.file_util import *
 from util.opencv_video_util import *
 from util.video_pingyu_util import process_frame
 from video_dedup.config_parser import Config
-from video_dedup.video_service import VideoService
-from video_merge.datacls import VideoInfo
 from video_merge.main import merge_video
-from video_merge.video_info import get_video_info, get_most_compatible_resolution
 
 
 def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
@@ -25,6 +21,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
     opencv_tmp = ''
     output_video_tmp = ''
     input_video = ''
+    ffmpeg_tmp = ''
     try:
         create_audio(goods_des, audio_path_tmp, random.choice(config.role), config.rate, config.volume, srt_path_tmp)
         audio_stream = read_ffmpeg_audio_from_file(audio_path_tmp)
@@ -32,20 +29,16 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         audio_duration = AudioSegment.from_file(audio_path_tmp).duration_seconds
         loguru.logger.info(f'音频时间{audio_duration}')
         max_sec = audio_duration if audio_duration > float(config.max_sec) else config.max_sec
-
-        video_path_list = get_mp4_files_path(f"{config.video_path}{good['brand_base']}")
-        if len(video_path_list) < 1:
-            loguru.logger.info("合并视频时没有合适的视频，请等待视频分割处理完成")
+        # 按照配置合并视频
+        input_video = merge_video(config, good, max_sec)
+        if input_video is None:
             return
-        video_info_list: List[VideoInfo] = get_video_info(video_path_list, max_sec)
-        loguru.logger.info(f'视频拼接:获取视频信息完成,共计{len(video_info_list)}个视频:{video_info_list}')
-        video_info_list = [video_i.video_path  for video_i in video_info_list]
-        video_service = VideoService(video_info_list, audio_path_tmp,config)
-        print("normalize video")
-        video_service.normalize_video()
-        video_file = video_service.generate_video_with_audio()
-        video_stream = ffmpeg.input(video_file).video
+
         width, height, origin_duration, bit_rate = video_properties(input_video)
+
+        # 1. 先检测静默音频，并删除部分静默音频对应片段，获取到处理后的音频 & 视频
+        video_stream, video_duration = remove_silent_video(input_video, origin_duration, config.silent_db,
+                                                           config.silent_duration, config.silent_ratio)
 
         # 2. 视频镜像
         if random.choice([True, False]):
@@ -69,7 +62,7 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         # if config.watermark_text != '':
         video_stream = add_watermark(video_stream, config, config.watermark_text,
                                      watermark_type=config.watermark_type,
-                                     direction=config.watermark_direction, duration=origin_duration)
+                                     direction=config.watermark_direction, duration=video_duration)
         # 商品购买界面
         goods_info_image_path = f"{config.goods_info_watermark_image_path}{good['brand_base']}/{good['goods_name']}.png"
         if os.path.isfile(goods_info_image_path):
@@ -85,13 +78,13 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
 
         # 8. 添加字幕 -- 对于视频时长太短的小视频，不需要加字幕
         # audio_path_tmp = ''
-        # if origin_duration > config.srt_duration:
+        if origin_duration > config.srt_duration:
             # 先存储音频文件到本地
             # audio_path_tmp = get_temp_path('.mp3')
             # save_audio_stream(audio_stream, audio_path_tmp)
             # 依据音频调用模型得到结果
             # srt_result = whisper_model(audio_path_tmp)
-            # video_stream = add_subtitles(video_stream, srt_path_tmp, config)
+            video_stream = add_subtitles(video_stream, srt_path_tmp, config)
 
         # 初步持久化
         output_video_tmp = get_temp_path('.mp4')
@@ -101,6 +94,12 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         audio_stream, video_stream = get_video_audio(output_video_tmp)
         width, height, duration, avg_bit_rate = video_properties(output_video_tmp)
 
+        # 9. 虚化背景
+        if random.choice([True, False]):
+            video_stream = add_blurred_background(video_stream, output_video_tmp, width=width, height=height,
+                                                  top_percent=random.choice([0, 1, 2]),
+                                                  bottom_percent=random.choice([0, 1, 2]),
+                                                  y_percent=random.choice([0, 1]))
 
         # 10. 添加title 和 description
         if good['top_sales_script'] != '':
@@ -119,8 +118,42 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
             video_stream = fadeout_video(video_stream, video_duration=duration, fade_duration=config.fadeout_duration)
 
         # ffmpeg处理结束
+        ffmpeg_tmp = get_temp_path('.mp4')
+        save_stream_to_video(video_stream, audio_stream, ffmpeg_tmp, bit_rate)
+        time00 = time.time()
+        loguru.logger.info('opencv前耗时', (time00 - time0))
+        # 12. opencv随机进行高斯模糊
+        opencv_tmp = get_temp_path('.mp4')
+        video_capture = opencv_read_video_from_path(ffmpeg_tmp)
+        frames = read_frames(video_capture)
+        if random.choice([True, False]):
+            frames = 每隔x帧随机选择一帧加随机模糊区域(frames, config.gauss_step, config.gauss_kernel,
+                                                       config.gauss_area_size)
+
+        if config.switch_frame_step > 0:
+            frames = switch_frames_with_step(frames, step=config.switch_frame_step)
+
+        if config.color_shift:
+            frames = adjust_colors(frames)
+
+        if random.choice([True, False]):
+            frames = huazhonghua_by_config(frames, config.hzh_factor, config.hzh_video_path)
+
+        # 创建一个带有默认参数的函数
+        if config.enable_scrambling > 0 or config.enable_texture_syn or config.enable_edge_blur:
+            partial_process_frame = functools.partial(process_frame, config=config)
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                frames = list(executor.map(partial_process_frame, frames))
+
+        # 先将frames生成得到静音的视频
+        frames_to_video(frames, opencv_tmp)
+
+        # ffmpeg读取静音视频，用于后续和音频进行合并
+        silent_audio, silent_video = get_video_audio(opencv_tmp)
+        # 合并音频和视频
         final_video_path = f'{config.save_path}{int(time.time())}_{uuid.uuid4()}.mp4'
-        save_stream_to_video(video_stream, audio_stream, final_video_path, bit_rate)
+        save_stream_to_video(silent_video, merged_audio, final_video_path, bit_rate)
+
         time1 = time.time()
         loguru.logger.info('视频去重耗时: {}, 视频时长：{}'.format(time1 - time0, origin_duration))
     finally:
