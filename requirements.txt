@@ -28,3 +28,4 @@ filelock
 openai-whisper
 paddleocr
 paddlepaddle
+pandas

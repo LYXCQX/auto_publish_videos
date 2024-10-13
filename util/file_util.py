@@ -189,7 +189,7 @@ def generate_temp_filename(original_filepath, new_ext="", new_directory=None):
     else:
         new_filepath = os.path.join(directory, new_filename)
 
-    return new_filepath
+    return new_filepath.replace('\\', '/')
 
 def random_with_system_time():
     system_time = int(time.time() * 1000)

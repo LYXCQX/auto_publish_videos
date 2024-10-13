@@ -53,7 +53,7 @@ def add_subtitles(video_file, subtitle_file,config:Config,margin_l=4, margin_r=4
     ]
     print(" ".join(ffmpeg_cmd))
     # 调用ffmpeg
-    subprocess.run(ffmpeg_cmd, check=True)
+    subprocess.run(ffmpeg_cmd, check=True, encoding='utf-8')
     # 重命名最终的文件
     if os.path.exists(output_file):
         os.remove(video_file)

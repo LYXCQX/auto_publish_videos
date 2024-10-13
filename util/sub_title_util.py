@@ -14,7 +14,7 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 def has_audio(video_path):
     """检查视频是否有音频"""
     command = f'ffprobe -i "{video_path}" -show_streams -select_streams a -loglevel error'
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
+    result = subprocess.run(command, shell=True, capture_output=True, text=True, encoding='utf-8')
     return bool(result.stdout.strip())
 
 

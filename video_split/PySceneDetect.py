@@ -25,7 +25,7 @@ def split_video_into_scenes(video_path, output_path, threshold=27.0):
         split_ml = f'ffmpeg -i {video_path} -c:v copy -c:a copy -reset_timestamps 1  -segment_time 3 -f segment "{output_path}/{file_name}-%03d.mp4"'
         # 执行命令
         try:
-            subprocess.run(split_ml, shell=True, check=True)
+            subprocess.run(split_ml, shell=True, check=True, encoding='utf-8')
             print("命令执行成功")
         except subprocess.CalledProcessError as e:
             print("命令执行失败:", e)

@@ -39,13 +39,13 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
             return
         video_info_list: List[VideoInfo] = get_video_info(video_path_list, max_sec)
         loguru.logger.info(f'视频拼接:获取视频信息完成,共计{len(video_info_list)}个视频:{video_info_list}')
-        video_info_list = [video_i.video_path  for video_i in video_info_list]
-        video_service = VideoService(video_info_list, audio_path_tmp,config)
+        # video_info_list = [video_i.video_path.replace('\\', '/')  for video_i in video_info_list]
+        video_service = VideoService(video_info_list, audio_path_tmp,max_sec,config)
         print("normalize video")
         video_service.normalize_video()
         video_file = video_service.generate_video_with_audio()
         video_stream = ffmpeg.input(video_file).video
-        width, height, origin_duration, bit_rate = video_properties(input_video)
+        width, height, origin_duration, bit_rate = video_properties(video_file)
 
         # 2. 视频镜像
         if random.choice([True, False]):
@@ -85,13 +85,13 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
 
         # 8. 添加字幕 -- 对于视频时长太短的小视频，不需要加字幕
         # audio_path_tmp = ''
-        # if origin_duration > config.srt_duration:
+        if origin_duration > config.srt_duration:
             # 先存储音频文件到本地
             # audio_path_tmp = get_temp_path('.mp3')
             # save_audio_stream(audio_stream, audio_path_tmp)
             # 依据音频调用模型得到结果
             # srt_result = whisper_model(audio_path_tmp)
-            # video_stream = add_subtitles(video_stream, srt_path_tmp, config)
+            video_stream = add_subtitles(video_stream, srt_path_tmp, config)
 
         # 初步持久化
         output_video_tmp = get_temp_path('.mp4')
@@ -101,6 +101,22 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
         audio_stream, video_stream = get_video_audio(output_video_tmp)
         width, height, duration, avg_bit_rate = video_properties(output_video_tmp)
 
+
+        # 9. 虚化背景
+        if random.choice([True]):
+            video_stream = add_blurred_background(video_stream, output_video_tmp, width=width, height=height,
+                                                  top_percent=random.choice([0]),
+                                                  bottom_percent=random.choice([0]),
+                                                  y_percent=random.choice([0]))
+        # 8. 添加字幕 -- 对于视频时长太短的小视频，不需要加字幕
+        # audio_path_tmp = ''
+        if origin_duration > config.srt_duration:
+            # 先存储音频文件到本地
+            # audio_path_tmp = get_temp_path('.mp3')
+            # save_audio_stream(audio_stream, audio_path_tmp)
+            # 依据音频调用模型得到结果
+            # srt_result = whisper_model(audio_path_tmp)
+            video_stream = add_subtitles(video_stream, srt_path_tmp, config)
 
         # 10. 添加title 和 description
         if good['top_sales_script'] != '':
