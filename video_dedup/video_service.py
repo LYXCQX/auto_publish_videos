@@ -414,6 +414,9 @@ class VideoService:
         # 添加背景音乐
         if self.enable_background_music:
             add_background_music(merge_video, random.choice(self.config.bgm_audio_path),self.segment_max_length, self.background_music_volume)
+        for tmp_video in self.video_list:
+            if os.path.exists(tmp_video):
+                os.remove(tmp_video)
         return merge_video
 
 

@@ -1,4 +1,5 @@
 import functools
+import os.path
 import shutil
 import time
 import uuid
@@ -150,6 +151,8 @@ def process_dedup_by_config(config: Config, good: VideoGoods, goods_des):
             os.remove(output_video_tmp)
         if input_video:
             os.remove(input_video)
+        if os.path.exists(video_file):
+            os.remove(video_file)
         # if ffmpeg_tmp:
         #     os.remove(ffmpeg_tmp)
         pass
