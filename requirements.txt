@@ -27,6 +27,7 @@ filelock
 openai-whisper
 paddleocr
 paddlepaddle
+pandas
 pyaudio
 pycaw
 pygame

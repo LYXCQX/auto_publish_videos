@@ -1,6 +1,8 @@
 import hashlib
 import os
+import random
 import tempfile
+import time
 import uuid
 from contextlib import contextmanager
 from pathlib import Path
@@ -209,3 +211,28 @@ def acquire_lock(lock, timeout=0):
 
 def get_upload_login_path(platform):
     return f'/opt/img/upload/{platform}_{request.remote_addr}_login.png'
+
+
+def generate_temp_filename(original_filepath, new_ext="", new_directory=None):
+    # 获取文件的目录、文件名和扩展名
+    directory, filename_with_ext = os.path.split(original_filepath)
+    filename, ext = os.path.splitext(filename_with_ext)
+
+    # 在文件名后添加.temp，但不改变扩展名
+    if new_ext:
+        new_filename = filename + '.temp' + new_ext
+    else:
+        new_filename = filename + '.temp' + ext
+
+    # 如果你需要完整的路径，可以使用os.path.join
+    if new_directory:
+        new_filepath = os.path.join(new_directory, new_filename)
+    else:
+        new_filepath = os.path.join(directory, new_filename)
+
+    return new_filepath.replace('\\', '/')
+
+def random_with_system_time():
+    system_time = int(time.time() * 1000)
+    random_seed = (system_time + random.randint(0, 10000))
+    return random_seed
