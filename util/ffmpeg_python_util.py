@@ -28,7 +28,7 @@ def get_video_audio(input_path):
 
 
 def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate=5000):
-    loguru.logger.info(f'---{video_stream}---{audio_stream}---{output_path}')
+    loguru.logger.info(f'---{video_stream}---{output_path}')
 
     # 使用 h264_nvenc 编码器来利用 GPU 加速
     stream = ffmpeg.output(

@@ -20,9 +20,12 @@
 #  All rights reserved.
 #
 #
+import math
+
+from video_dedup.config_parser import Config
 
 
-def gen_filter(segments, target_width, target_height,transition_type, transition_value, transition_duration ,with_audio=False):
+def gen_filter(segments, target_width, target_height,transition_type, transition_value, transition_duration ,config:Config,with_audio=False):
     video_fades = ""
     audio_fades = ""
     settb = ""
@@ -31,7 +34,7 @@ def gen_filter(segments, target_width, target_height,transition_type, transition
 
     video_length = 0
     file_lengths = [0] * len(segments)
-
+    angle_radians = math.radians(config.reverse_angle)
     if target_width:
         for i in range(len(segments)):
             # 视频归一化
@@ -64,7 +67,7 @@ def gen_filter(segments, target_width, target_height,transition_type, transition
             #                (last_audio_output, i + 1,
             #                 '[' + next_audio_output + '];' if (i) < len(segments) - 2 else "[audio]")
             last_audio_output = next_audio_output
-
+    rotate_txt = f"[video]rotate={angle_radians}[video];"
     if with_audio:
-        return settb + video_fades + audio_fades
-    return settb + video_fades
+        return settb + video_fades + audio_fades+rotate_txt
+    return settb + video_fades+rotate_txt

@@ -27,6 +27,7 @@ def get_video_info(video_path_list, max_sec) -> List[VideoInfo]:
         loguru.logger.debug(f'正在获取视频信息[{video_path}]')
         video_info_list.append(VideoInfo(video_path, fps, total_frames, width, height, total_seconds))
         last_sec += total_seconds
+        loguru.logger.debug(f'当前时长 {total_seconds} 当前帧率{fps} 累计时长：{last_sec} 需要{max_sec}')
         if last_sec > float(max_sec):
             return video_info_list
     return video_info_list

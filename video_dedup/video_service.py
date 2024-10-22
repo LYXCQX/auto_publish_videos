@@ -28,11 +28,10 @@ import platform
 import random
 import re
 import subprocess
-from typing import List
 
 from PIL import Image
 
-from util.file_util import generate_temp_filename, random_with_system_time, get_temp_path
+from util.file_util import generate_temp_filename, get_temp_path
 from video_dedup.config_parser import Config
 from video_dedup.texiao_service import gen_filter
 
@@ -110,7 +109,7 @@ def get_video_info(video_file):
     command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of',
                'default=noprint_wrappers=1:nokey=1', video_file]
     print(" ".join(command))
-    result = subprocess.run(command, capture_output=True, encoding='utf-8')
+    result = subprocess.run(command, capture_output=True)
 
     # 解析输出以获取宽度和高度
     output = result.stdout.decode('utf-8')
@@ -159,8 +158,8 @@ def get_video_length_list(video_list):
     return video_length_list
 
 
-def add_music(video_file, audio_file,max_sec):
-    output_file = generate_temp_filename(video_file)
+def add_music(video_file, audio_file, max_sec):
+    output_file = generate_temp_filename(video_file, new_directory=work_output_dir)
     # 构造ffmpeg命令
     ffmpeg_cmd = [
         'ffmpeg',
@@ -184,8 +183,8 @@ def add_music(video_file, audio_file,max_sec):
         os.renames(output_file, video_file)
 
 
-def add_background_music(video_file, audio_file,max_sec, bgm_volume=0.5):
-    output_file = generate_temp_filename(video_file)
+def add_background_music(video_file, audio_file, max_sec, bgm_volume=0.5):
+    output_file = generate_temp_filename(video_file, new_directory=work_output_dir)
     # 构建FFmpeg命令
     command = [
         'ffmpeg',
@@ -210,14 +209,13 @@ def add_background_music(video_file, audio_file,max_sec, bgm_volume=0.5):
         os.renames(output_file, video_file)
 
 
-
 class VideoService:
-    def __init__(self, video_list, audio_file,max_sec,config:Config):
+    def __init__(self, video_list, audio_file, max_sec, config: Config):
         self.config = config
         self.video_list = video_list
         self.audio_file = audio_file
         self.fps = config.fps
-        self.seg_min_duration = 1
+        self.seg_min_duration = 0
         self.segment_max_length = max_sec
         self.target_width = int(config.video_width)
         self.target_height = int(config.video_height)
@@ -235,9 +233,11 @@ class VideoService:
 
     def normalize_video(self):
         return_video_list = []
+        random.shuffle(self.video_list)
+        total_sec = 0
         for video_inf in self.video_list:
-            apply_flip = random.choice([True, False])  # 随机选择是否镜像
-            media_file = video_inf.video_path.replace('\\', '/')
+            apply_flip = random.choice(['', 'hflip,'])  # 随机选择是否镜像
+            media_file = video_inf.replace('\\', '/')
             # 如果当前文件是图片，添加转换为视频的命令
             if media_file.lower().endswith(('.jpg', '.jpeg', '.png')):
                 output_name = generate_temp_filename(media_file, ".mp4", work_output_dir)
@@ -254,8 +254,7 @@ class VideoService:
                         '-t', str(self.default_duration),
                         '-r', str(self.fps),
                         '-vf',
-                        (',hflip' if apply_flip else ''),
-                        f'scale=-1:{self.target_height}:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
+                        f'scale=-1:{self.target_height}:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
                         '-y', output_name]
                 else:
                     # ffmpeg_cmd = f"ffmpeg -loop 1 -i '{media_file}' -c:v h264 -t {self.default_duration} -r {self.fps} -vf 'scale={self.target_width}:-1:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2' -y {output_name}"
@@ -267,20 +266,16 @@ class VideoService:
                         '-t', str(self.default_duration),
                         '-r', str(self.fps),
                         '-vf',
-                        f'scale={self.target_width}:-1:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
-                        (',hflip' if apply_flip else ''),
+                        f'scale={self.target_width}:-1:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
                         '-y', output_name]
                 print(" ".join(ffmpeg_cmd))
                 subprocess.run(ffmpeg_cmd, check=True, capture_output=True, encoding='utf-8')
                 return_video_list.append(output_name)
-
+                total_sec += self.default_duration
             else:
                 # 当前文件是视频文件
-                # video_duration = get_video_duration(media_file)
-                # video_width, video_height = get_video_info(media_file)
-                video_duration = video_inf.total_seconds
-                video_width = video_inf.width
-                video_height = video_inf.height
+                video_duration = get_video_duration(media_file)
+                video_width, video_height = get_video_info(media_file)
                 output_name = generate_temp_filename(media_file, new_directory=work_output_dir)
                 if self.seg_min_duration > video_duration:
                     # 需要扩展视频
@@ -293,8 +288,7 @@ class VideoService:
                             '-r', str(self.fps),  # 设置帧率
                             '-an',  # 去除音频
                             '-vf',
-                            f"setpts={stretch_factor}*PTS,scale=-1:{self.target_height}:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
-                            # (',hflip' if apply_flip else ''),
+                            f"setpts={stretch_factor}*PTS,scale=-1:{self.target_height}:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
                             # 调整时间戳滤镜
                             # '-vf', f'scale=-1:{self.target_height}:force_original_aspect_ratio=1',  # 设置视频滤镜来调整分辨率
                             # '-vf', f'crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
@@ -309,8 +303,7 @@ class VideoService:
                             '-r', str(self.fps),  # 设置帧率
                             '-an',  # 去除音频
                             '-vf',
-                            f"setpts={stretch_factor}*PTS,scale={self.target_width}:-1:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
-                            # (',hflip' if apply_flip else ''),
+                            f"setpts={stretch_factor}*PTS,scale={self.target_width}:-1:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
                             # 调整时间戳滤镜
                             # '-vf', f'scale={self.target_width}:-1:force_original_aspect_ratio=1',  # 设置视频滤镜来调整分辨率
                             # '-vf', f'crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
@@ -330,8 +323,7 @@ class VideoService:
                             '-r', str(self.fps),  # 设置帧率
                             '-an',  # 去除音频
                             '-vf',
-                            f"scale=-1:{self.target_height}:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
-                            # (',hflip' if apply_flip else ''),
+                            f"scale=-1:{self.target_height}:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
                             # 设置视频滤镜来调整分辨率
                             # '-vf', f'crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
                             '-y',
@@ -344,8 +336,7 @@ class VideoService:
                             '-r', str(self.fps),  # 设置帧率
                             '-an',  # 去除音频
                             '-vf',
-                            f"scale={self.target_width}:-1:force_original_aspect_ratio=1,crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
-                            # ('hflip' if apply_flip else ''),
+                            f"scale={self.target_width}:-1:force_original_aspect_ratio=1,{apply_flip}crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2",
                             # 设置视频滤镜来调整分辨率
                             # '-vf', f'crop={self.target_width}:{self.target_height}:(ow-iw)/2:(oh-ih)/2',
                             '-y',
@@ -359,12 +350,20 @@ class VideoService:
                 #     os.remove(media_file)
                 #     os.renames(output_name, media_file)
                 return_video_list.append(output_name)
+                new_video_duration = get_video_duration(output_name)
+                if self.enable_video_transition_effect and len(self.video_list) > 1:
+                    new_video_duration -= int(self.video_transition_effect_duration)
+                total_sec += new_video_duration
+            print(
+                f'一共需要{self.segment_max_length} ，目前一共 {total_sec} ，当前视频b{video_duration} e{new_video_duration}')
+            if total_sec >= self.segment_max_length:
+                break
         self.video_list = return_video_list
         return return_video_list
 
     def generate_video_with_audio(self):
         # 生成视频和音频的代码
-        random_name = str(random_with_system_time())
+        # random_name = str(random_with_system_time())
         merge_video = get_temp_path('.mp4')
         temp_video_filelist_path = get_temp_path('.txt')
 
@@ -372,13 +371,15 @@ class VideoService:
         with open(temp_video_filelist_path, 'w', encoding='utf-8') as f:
             for video_file in self.video_list:
                 f.write(f"file '{video_file}'\n")
-
+        angle_radians = math.radians(self.config.reverse_angle)
         # 拼接视频
         ffmpeg_concat_cmd = ['ffmpeg',
                              '-f', 'concat',
                              '-safe', '0',
                              '-i', temp_video_filelist_path,
-                             '-c', 'copy',
+                             # '-c', 'copy',
+                             '-vf',
+                             f"rotate={angle_radians}",
                              '-fflags',
                              '+genpts',
                              '-y',
@@ -392,6 +393,7 @@ class VideoService:
                                         self.video_transition_effect_type,
                                         self.video_transition_effect_value,
                                         self.video_transition_effect_duration,
+                                        self.config,
                                         False)
 
             # File inputs from the list
@@ -402,18 +404,18 @@ class VideoService:
                                  # '-map', '[audio]',
                                  '-y',
                                  merge_video]
-
-
+        print(" ".join(ffmpeg_concat_cmd))
         subprocess.run(ffmpeg_concat_cmd, encoding='utf-8')
         # 删除临时文件
         os.remove(temp_video_filelist_path)
 
         # 拼接音频
-        add_music(merge_video, self.audio_file,self.segment_max_length)
+        add_music(merge_video, self.audio_file, self.segment_max_length)
 
         # 添加背景音乐
         if self.enable_background_music:
-            add_background_music(merge_video, random.choice(self.config.bgm_audio_path),self.segment_max_length, self.background_music_volume)
+            add_background_music(merge_video, random.choice(self.config.bgm_audio_path), self.segment_max_length,
+                                 self.background_music_volume)
         for tmp_video in self.video_list:
             if os.path.exists(tmp_video):
                 os.remove(tmp_video)
@@ -430,8 +432,9 @@ def run_ffmpeg_command(command):
     except Exception as e:
         print(f"An error occurred while execute ffmpeg command {e}")
 
+
 def extent_audio(audio_file, pad_dur=2):
-    temp_file = generate_temp_filename(audio_file)
+    temp_file = generate_temp_filename(audio_file, new_directory=work_output_dir)
     # 构造ffmpeg命令
     command = [
         'ffmpeg',

@@ -38,7 +38,7 @@ def merge_one():
                     try:
                         goods_des = f"{random.choice(config.bottom_sales)}， {get_goods_des(use_good)}，{random.choice(config.tail_sales)}"
                         use_good['sales_script'] = get_sales_scripts(use_good)
-                        loguru.logger.info(f"合并视频有{len(use_good)}商品需要处理")
+                        loguru.logger.info(f"合并视频有{len(video_bills)}商品需要处理")
                         # 相同的平台才能生成对应的视频
                         if user_info['type'] == use_good['type']:
                             try:
