@@ -13,7 +13,7 @@ from video_dedup.config_parser import read_dedup_config
 from video_split.main import split_video
 
 config = read_dedup_config()
-lock = FileLock("/opt/software/auto_publish_videos/job.lock")
+lock = FileLock("/opt/software/auto_publish_videos/job1.lock")
 
 
 def split_job():

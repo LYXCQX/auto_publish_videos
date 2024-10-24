@@ -106,7 +106,7 @@ def get_video_fps(video_path):
 
 
 def get_video_info(video_file):
-    command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height', '-of',
+    command = ['ffprobe', '-v', 'error', '-select_streams', 'v:0', '-show_entries', 'stream=width,height,side_data_list', '-of',
                'default=noprint_wrappers=1:nokey=1', video_file]
     print(" ".join(command))
     result = subprocess.run(command, capture_output=True)
@@ -191,7 +191,9 @@ def add_background_music(video_file, audio_file, max_sec, bgm_volume=0.5):
         '-i', video_file,  # 输入视频文件
         '-i', audio_file,  # 输入音频文件（背景音乐）
         '-filter_complex',
-        f"[1:a]aloop=loop=0:size=100M[bgm];[bgm]volume={bgm_volume}[bgm_vol];[0:a][bgm_vol]amix=duration=first:dropout_transition=3:inputs=2[a]",
+        # f"[1:a]aloop=loop=0:size=100M[bgm];[bgm]volume={bgm_volume}[bgm_vol];[0:a][bgm_vol]amix=duration=first:dropout_transition=3:inputs=2[a]",
+        # f"[1:a]aloop=loop=-1:size=100M,atrim=duration={max_sec}[bgm];[bgm]volume={bgm_volume}[bgm_vol];[0:a][bgm_vol]amix=duration=first:dropout_transition=3:inputs=2[a]",
+        f"[1:a]aloop=loop=-1:size=200M,atrim=duration={max_sec}[bgm];[bgm]volume={bgm_volume}[bgm_vol];[0:a][bgm_vol]amix=inputs=2[a]",
         # 在[1:a]之后添加了aloop过滤器来循环背景音乐。loop=0表示无限循环，size=200M和duration=300是可选参数，用于设置循环音频的大小或时长（这里设置得很大以确保足够长，可以根据实际需要调整），start=0表示从音频的开始处循环。
         '-map', '0:v',  # 选择视频流
         '-map', '[a]',  # 选择混合后的音频流
@@ -377,16 +379,16 @@ class VideoService:
                              '-f', 'concat',
                              '-safe', '0',
                              '-i', temp_video_filelist_path,
-                             # '-c', 'copy',
-                             '-vf',
-                             f"rotate={angle_radians}",
+                             '-c', 'copy',
+                             # '-vf',
+                             # f"rotate={angle_radians}",
                              '-fflags',
                              '+genpts',
                              '-y',
                              merge_video]
 
         # 是否需要转场特效
-        if self.enable_video_transition_effect and len(self.video_list) > 1:
+        if random.choice([True, False]) and len(self.video_list) > 1:
             video_length_list = get_video_length_list(self.video_list)
             print("启动转场特效")
             zhuanchang_txt = gen_filter(video_length_list, None, None,

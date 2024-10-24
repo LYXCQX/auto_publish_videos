@@ -130,7 +130,7 @@
 
             pollForImage(platform, loginType);
 
-            const response = await fetch(`/add_user/add_upload_user?platform=${platform}&loginType=${loginType}&phoneNumber=${phoneNumber}&verificationCode=${verificationCode}`);
+            const response = await fetch(`/add_upload_user?platform=${platform}&loginType=${loginType}&phoneNumber=${phoneNumber}&verificationCode=${verificationCode}`);
             const data = await response.json();
             if (data.success) {
                 clearInterval(interval); // 停止轮询
@@ -153,7 +153,7 @@
             }
 
             try {
-                const response = await fetch(`/add_user/get_qr_image?platform=${platform}&loginType=${loginType}`);
+                const response = await fetch(`/get_qr_image?platform=${platform}&loginType=${loginType}`);
                 const data = await response.json();
                 if (data.success && data.imageUrl) {
                     console.log(JSON.stringify(data))

@@ -148,7 +148,7 @@ def read_dedup_config():
     config.enable_texture_syn = parser.getboolean('dedup_step', 'enable_texture_syn')
     config.enable_edge_blur = parser.getboolean('dedup_step', 'enable_edge_blur')
     config.data = parser.get('dedup_step', 'data')
-    config.max_sec = parser.get('dedup_step', 'max_sec')
+    config.max_sec = parser.getint('dedup_step', 'max_sec')
     config.fps = parser.getint('dedup_step', 'fps')
     config.role = eval(parser.get('dedup_step', 'role'))
     config.rate = parser.get('dedup_step', 'rate')

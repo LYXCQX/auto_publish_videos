@@ -33,13 +33,13 @@ def save_stream_to_video(video_stream, audio_stream, output_path, target_bitrate
     # 使用 h264_nvenc 编码器来利用 GPU 加速
     stream = ffmpeg.output(
         video_stream, audio_stream, output_path,
-        vcodec='h264_nvenc',  # 使用 GPU 加速的编码器
-        pix_fmt='yuv420p',
-        preset='slow',
-        bit_rate=str(target_bitrate) + 'k',
-        maxrate='20M',
-        bufsize='40M',
-        shortest=None
+        # vcodec='h264_nvenc',  # 使用 GPU 加速的编码器
+        # pix_fmt='yuv420p',
+        # preset='slow',
+        # bit_rate=str(target_bitrate) + 'k',
+        # maxrate='20M',
+        # bufsize='40M',
+        # shortest=None
     )
     ffmpeg.run(stream)
 

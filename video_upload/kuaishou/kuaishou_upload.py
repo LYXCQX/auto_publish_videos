@@ -24,11 +24,11 @@ db = getdb()
 # 上传视频按钮
 update_class_list = ['.SOCr7n1uoqI-', '._upload-btn_1kfpp_68']
 # 描述信息
-detail_class_list = ['.clGhv3UpdEo-', '._description_36dct_62']
+detail_class_list = ['.clGhv3UpdEo-', '._description_36dct_62', '#work-description-edit']
 # 位置信息，定位后显示的城市标签
-position_class_list = ['.uUoMPMIW8HY-', '._position-tips_36dct_318']
+position_class_list = ['.uUoMPMIW8HY-', '.ant-cascader-menus']
 # 重新上传按钮
-reupload_class_list = ['.diPApjTPuXE-', '._reupload_teo17_31']
+reupload_class_list = ['.diPApjTPuXE-', '._reupload_teo17_31', '_button_si04s_1 _button-default_si04s_35']
 # 发布按钮
 publish_class_list = ['.XwacrNGK2pY-', '._footer_9braw_95']
 
@@ -148,8 +148,9 @@ async def video_is_upload(goods, page):
     start_time = time.time()  # 获取开始时间
     while True:
         try:
-            number = await page.get_by_text('上传成功').count()
-            if number > 0:
+            number = await page.get_by_text('上传中').count()
+            div_exists = await page.query_selector('div._preview-video_1ahzu_181') is not None
+            if div_exists:
                 loguru.logger.info("  [-]视频上传完毕")
                 break
             else:
@@ -200,6 +201,9 @@ class KuaiShouVideo(object):
         button = page.get_by_text('我知道了')
         # 检查按钮是否存在
         await button.click() if await button.count() > 0 else None
+        xyb_button = page.locator('._close_d7f44_29')
+        # 检查按钮是否存在
+        await xyb_button.click() if await xyb_button.count() > 0 else None
         loguru.logger.info("  [-]{} 正在填充标题和话题...".format(user_info['username']))
         detail_class = await get_use_class(page, detail_class_list)
         await page.locator(detail_class).fill(goods['video_title'])
@@ -210,13 +214,25 @@ class KuaiShouVideo(object):
             if tip != '':
                 loguru.logger.info(f"{user_info['username']}正在添加第{tip}话题")
                 await page.type(detail_class, "#" + tip)
-        await page.get_by_text('不允许下载此作品').locator('..').locator('.ant-checkbox').click()
-        await page.get_by_text('当前地点').locator('..').locator('.ant-radio').click()
+        await page.get_by_text('允许下载此作品').locator('..').locator('.ant-checkbox').click()
+        await page.locator('#rc_select_1').click()
         # 授权位置
         while True:
-            pp_bl = await page.locator(await get_use_class(page, position_class_list)).is_visible()
-            if pp_bl:
-                break
+            await page.wait_for_selector('.ant-cascader-menus li', state='visible')
+            li_elements = await page.query_selector_all('.ant-cascader-menus .ant-cascader-menu-item-content')
+            # 检查是否找到元素
+            if li_elements:
+                try:
+                    # 检查第一个元素是否可见且可点击
+                    if await li_elements[0].is_visible() and await li_elements[0].is_enabled():
+                        await li_elements[0].click()
+                        break
+                    else:
+                        print("第一个元素不可见或不可点击")
+                except:
+                    pass
+            else:
+                print("没有找到任何元素")
         start_time = time.time()  # 获取开始时间
         while True:
             # 提取并打印每个 item 的 label 属性值
@@ -228,9 +244,9 @@ class KuaiShouVideo(object):
             for index, brand_str in enumerate(brand_strs):
                 # 输入品牌品牌 第一个是店铺地址全称
                 if index == 1:
-                    await page.locator('#rc_select_3').fill('')
+                    await page.locator('#rc_select_2').fill('')
                     await asyncio.sleep(0.5)
-                await page.locator('#rc_select_3').type(brand_str)
+                await page.locator('#rc_select_2').type(brand_str)
                 await asyncio.sleep(0.5)
                 # 等待页面加载并确保元素存在
                 await page.wait_for_selector('.rc-virtual-list-holder-inner .ant-select-item')
@@ -259,7 +275,14 @@ class KuaiShouVideo(object):
                 return  # 退出循环
         await video_is_upload(goods, page)
         try:
-            await page.locator(await get_use_class(page, publish_class_list)).get_by_text('发布').click()
+            # await page.query_selector('button:has-text("发布")').click()
+            publish_button = await page.query_selector('div._button_si04s_1._button-primary_si04s_60:has-text("发布")')
+
+            if publish_button:
+                # 检查按钮是否可见且可点击
+                if await publish_button.is_visible() and await publish_button.is_enabled():
+                    await publish_button.click()
+                    print("成功点击发布按钮")
         except Exception as e:
             loguru.logger.error(f"{goods['goods_name']}上传快手发现上传出错了...{goods['id']}{e}")
         # 判断视频是否发布成功
@@ -325,9 +348,10 @@ class KuaiShouVideo(object):
                     account_file = get_account_file(user_info['user_id'])
                     async with async_playwright() as playwright:
                         await kuaishou_setup(account_file, handle=True)
-                        await self.upload(playwright, good, user_info, account_file, '', None)
+                        await self.upload(playwright, good, user_info, account_file, 'D:\Chrome\Application\chrome.exe',
+                                          None)
             except Exception as e:
-                loguru.logger.error(e)
+                loguru.logger.error(f"上传视频失败: {e.stack}")
 
 
 if __name__ == '__main__':
